@@ -184,3 +184,33 @@ class CkImageShader extends CkShader implements ui.ImageShader {
     rawSkiaObject?.delete();
   }
 }
+
+class CkFragmentShader extends CkShader implements ui.FragmentShader {
+  CkFragmentShader(String sksl) : _skRuntimeEffect = canvasKit.SkRuntimeEffect.Make(sksl);
+
+  // final ui.TileMode tileModeX;
+  // final ui.TileMode tileModeY;
+  // final Float64List matrix4;
+  // final CkImage _skImage;
+  final SkRuntimeEffect _skRuntimeEffect;
+
+  // @override
+  // SkShader createDefault() => _skImage.skImage.makeShader(
+  //   toSkTileMode(tileModeX),
+  //   toSkTileMode(tileModeY),
+  //   toSkMatrixFromFloat64(matrix4),
+  // );
+
+    @override
+  SkShader createDefault() {
+    return _skRuntimeEffect.makeShader
+  }
+
+  @override
+  SkShader resurrect() => createDefault();
+
+  @override
+  void delete() {
+    rawSkiaObject?.delete();
+  }
+}

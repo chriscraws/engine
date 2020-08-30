@@ -627,6 +627,15 @@ class ImageShader extends Shader {
   }
 }
 
+class FragmentShader extends Shader {
+  factory FragmentShader(String sksl) {
+    if (engine.experimentalUseSkia) {
+      return engine.CkFragmentShader(sksl);
+    }
+    throw UnsupportedError('FragmentShader not implemented for web platform.');
+  }
+}
+
 class ImmutableBuffer {
   ImmutableBuffer._(this.length);
   static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {

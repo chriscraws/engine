@@ -44,6 +44,7 @@ class CanvasKit {
   external SkFontSlantEnum get FontSlant;
   external SkAnimatedImage MakeAnimatedImageFromEncoded(Uint8List imageData);
   external SkShaderNamespace get SkShader;
+  external SkRuntimeEffectNamespace get SkRuntimeEffect;
   external SkMaskFilter MakeBlurMaskFilter(
       SkBlurStyle blurStyle, double sigma, bool respectCTM);
   external SkColorFilterNamespace get SkColorFilter;
@@ -702,6 +703,23 @@ class SkShaderNamespace {
 @JS()
 @anonymous
 class SkShader {
+  external void delete();
+}
+
+@JS()
+class SkRuntimeEffectNamespace {
+  external SkRuntimeEffect Make(
+    String sksl,
+  );
+}
+
+@JS()
+@anonymous
+class SkRuntimeEffect {
+  external SkShader makeShader(
+    SkData uniforms,
+    
+  );
   external void delete();
 }
 
