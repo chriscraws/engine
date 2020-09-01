@@ -717,9 +717,18 @@ class SkRuntimeEffectNamespace {
 @anonymous
 class SkRuntimeEffect {
   external SkShader makeShader(
-    SkData uniforms,
-    
+    Float32List? uniforms,
+    bool isOpaque,
+    Float32List? matrix,
   );
+
+  external SkShader makeShaderWithChildren(
+    Float32List? uniforms,
+    bool isOpaque,
+    List<SkShader> children,
+    Float32List? matrix,
+  );
+
   external void delete();
 }
 
