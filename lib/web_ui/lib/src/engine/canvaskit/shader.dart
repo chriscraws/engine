@@ -189,10 +189,12 @@ class CkFragmentShader extends CkShader implements ui.FragmentShader {
   CkFragmentShader(String sksl) : _skRuntimeEffect = canvasKit.SkRuntimeEffect.Make(sksl);
 
   final SkRuntimeEffect _skRuntimeEffect;
+  double _time = 0;
+  ui.Image? _image;
 
   @override
   SkShader createDefault() {
-    return _skRuntimeEffect.makeShader(null, false, null);
+    return _skRuntimeEffect.makeShader(Float32List.fromList([_time]), false, null);
   }
 
   @override
@@ -201,5 +203,24 @@ class CkFragmentShader extends CkShader implements ui.FragmentShader {
   @override
   void delete() {
     rawSkiaObject?.delete();
+  }
+
+  void setTime(double time) {
+    _time = time;
+    _updateSkiaObject();
+  }
+
+  void setImage(ui.Image image, ui.TileMode tmx, ui.TileMode tmy, Float64List matrix4) {
+    _image = image;
+    _updateSkiaObject();
+  }
+
+  void _updateSkiaObject() {
+    Float32List uniforms = Float32List.fromList([_time]);
+    if (_image == null) {
+      rawSkiaObject = _skRuntimeEffect.makeShader(uniforms, false, null);
+    } else {
+      rawSkiaObject = _skRuntimeEffect.makeShaderWithChildren(uniforms, false, [/* TODO: image to shader */], null);
+    }
   }
 }

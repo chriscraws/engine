@@ -634,6 +634,14 @@ class FragmentShader extends Shader {
     }
     throw UnsupportedError('FragmentShader not implemented for web platform.');
   }
+
+  void setTime(double time) {
+    engine.CkFragmentShader.setTime(time);
+  } 
+
+  void setImage(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
+    engine.CkFragmentShader.setImage(image, tmx, tmy, matrix4);
+  }
 }
 
 class ImmutableBuffer {
