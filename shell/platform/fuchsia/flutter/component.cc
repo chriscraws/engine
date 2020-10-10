@@ -20,6 +20,7 @@
 #include <zircon/dlfcn.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
+
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -404,17 +405,6 @@ Application::Application(
   // TODO(FL-117): Re-enable causal async stack traces when this issue is
   // addressed.
   settings_.dart_flags = {"--no_causal_async_stacks"};
-
-  // Disable code collection as it interferes with JIT code warmup
-  // by decreasing usage counters and flushing code which is still useful.
-  settings_.dart_flags.push_back("--no-collect_code");
-
-  if (!flutter::DartVM::IsRunningPrecompiledCode()) {
-    // The interpreter is enabled unconditionally in JIT mode. If an app is
-    // built for debugging (that is, with no bytecode), the VM will fall back on
-    // ASTs.
-    settings_.dart_flags.push_back("--enable_interpreter");
-  }
 
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");

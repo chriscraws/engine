@@ -1,4 +1,4 @@
-// Copyright 2019 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -15,14 +15,14 @@ class InitialRouteReply extends Scenario {
   /// Creates the InitialRouteReply.
   ///
   /// The [window] parameter must not be null.
-  InitialRouteReply(Window window)
-      : assert(window != null),
-        super(window);
+  InitialRouteReply(PlatformDispatcher dispatcher)
+      : assert(dispatcher != null),
+        super(dispatcher);
 
   @override
   void onBeginFrame(Duration duration) {
     sendJsonMethodCall(
-      window: window,
+      dispatcher: dispatcher,
       channel: 'initial_route_test_channel',
       method: window.defaultRouteName,
     );

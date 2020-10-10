@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
@@ -23,6 +24,7 @@
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -68,7 +70,9 @@ namespace flutter {
 ///           name and it does happen to be one of the older classes in the
 ///           repository.
 ///
-class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
+class Engine final : public RuntimeDelegate,
+                     public HintFreedDelegate,
+                     PointerDataDispatcher::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Indicates the result of the call to `Engine::Run`.
@@ -189,13 +193,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     /// @brief      Notifies the shell of the name of the root isolate and its
     ///             port when that isolate is launched, restarted (in the
     ///             cold-restart scenario) or the application itself updates the
-    ///             name of the root isolate (via `Window.setIsolateDebugName`
-    ///             in `window.dart`). The name of the isolate is meaningless to
-    ///             the engine but is used in instrumentation and tooling.
-    ///             Currently, this information is to update the service
-    ///             protocol list of available root isolates running in the VM
-    ///             and their names so that the appropriate isolate can be
-    ///             selected in the tools for debugging and instrumentation.
+    ///             name of the root isolate (via
+    ///             `PlatformDispatcher.setIsolateDebugName` in
+    ///             `platform_dispatcher.dart`). The name of the isolate is
+    ///             meaningless to the engine but is used in instrumentation and
+    ///             tooling. Currently, this information is to update the
+    ///             service protocol list of available root isolates running in
+    ///             the VM and their names so that the appropriate isolate can
+    ///             be selected in the tools for debugging and instrumentation.
     ///
     /// @param[in]  isolate_name  The isolate name
     /// @param[in]  isolate_port  The isolate port
@@ -326,30 +331,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ~Engine() override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Gets the refresh rate in frames per second of the vsync waiter
-  ///             used by the animator managed by this engine. This information
-  ///             is purely advisory and is not used by any component. It is
-  ///             only used by the tooling to visualize frame performance.
-  ///
-  /// @attention  The display refresh rate is useless for frame scheduling
-  ///             because it can vary and more accurate frame specific
-  ///             information is given to the engine by the vsync waiter
-  ///             already. However, this call is used by the tooling to ask very
-  ///             high level questions about display refresh rate. For example,
-  ///             "Is the display 60 or 120Hz?". This information is quite
-  ///             unreliable (not available immediately on launch on some
-  ///             platforms), variable and advisory. It must not be used by any
-  ///             component that claims to use it to perform accurate frame
-  ///             scheduling.
-  ///
-  /// @return     The display refresh rate in frames per second. This may change
-  ///             from frame to frame, throughout the lifecycle of the
-  ///             application, and, may not be available immediately upon
-  ///             application launch.
-  ///
-  float GetDisplayRefreshRate() const;
-
-  //----------------------------------------------------------------------------
   /// @return     The pointer to this instance of the engine. The engine may
   ///             only be accessed safely on the UI task runner.
   ///
@@ -465,6 +446,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   void BeginFrame(fml::TimePoint frame_time);
 
+  // |HintFreedDelegate|
+  void HintFreed(size_t size) override;
+
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the UI task runner is not expected to
   ///             undertake a new frame workload till a specified timepoint. The
@@ -560,8 +544,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             "main.dart", the entrypoint is "main" and the port name
   ///             "1234". Once launched, the isolate may re-christen itself
   ///             using a name it selects via `setIsolateDebugName` in
-  ///             `window.dart`. This name is purely advisory and only used by
-  ///             instrumentation and reporting purposes.
+  ///             `platform_dispatcher.dart`. This name is purely advisory and
+  ///             only used by instrumentation and reporting purposes.
   ///
   /// @return     The debug name of the root isolate.
   ///
@@ -751,6 +735,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
+  // Return the asset manager associated with the current engine, or nullptr.
+  std::shared_ptr<AssetManager> GetAssetManager();
+
   // |PointerDataDispatcher::Delegate|
   void DoDispatchPacket(std::unique_ptr<PointerDataPacket> packet,
                         uint64_t trace_flow_id) override;
@@ -797,6 +784,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   FontCollection font_collection_;
   ImageDecoder image_decoder_;
   TaskRunners task_runners_;
+  size_t hint_freed_bytes_since_last_idle_ = 0;
   fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|

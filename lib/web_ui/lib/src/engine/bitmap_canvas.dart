@@ -71,7 +71,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// Keeps track of what device pixel ratio was used when this [BitmapCanvas]
   /// was created.
-  final double _devicePixelRatio = EngineWindow.browserDevicePixelRatio;
+  final double _devicePixelRatio = EnginePlatformDispatcher.browserDevicePixelRatio;
 
   // Compensation for [_initializeViewport] snapping canvas position to 1 pixel.
   int? _canvasPositionX, _canvasPositionY;
@@ -150,13 +150,13 @@ class BitmapCanvas extends EngineCanvas {
 
   static int _widthToPhysical(double width) {
     final double boundsWidth = width + 1;
-    return (boundsWidth * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsWidth * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
   static int _heightToPhysical(double height) {
     final double boundsHeight = height + 1;
-    return (boundsHeight * EngineWindow.browserDevicePixelRatio).ceil() +
+    return (boundsHeight * EnginePlatformDispatcher.browserDevicePixelRatio).ceil() +
         2 * kPaddingPixels;
   }
 
@@ -198,11 +198,11 @@ class BitmapCanvas extends EngineCanvas {
   /// * [PersistedPicture._recycleCanvas] which also uses this method
   ///   for the same reason.
   bool isReusable() {
-    return _devicePixelRatio == EngineWindow.browserDevicePixelRatio;
+    return _devicePixelRatio == EnginePlatformDispatcher.browserDevicePixelRatio;
   }
 
-  /// Returns a data URI containing a representation of the image in this
-  /// canvas.
+  /// Returns a "data://" URI containing a representation of the image in this
+  /// canvas in PNG format.
   String toDataUrl() {
     return _canvasPool.toDataUrl();
   }
@@ -608,11 +608,11 @@ class BitmapCanvas extends EngineCanvas {
     double x,
     double y,
   ) {
-    html.CanvasRenderingContext2D? ctx = _canvasPool.context;
+    html.CanvasRenderingContext2D ctx = _canvasPool.context;
     x += line.left;
     final double? letterSpacing = style.letterSpacing;
     if (letterSpacing == null || letterSpacing == 0.0) {
-      ctx!.fillText(line.displayText!, x, y);
+      ctx.fillText(line.displayText!, x, y);
     } else {
       // When letter-spacing is set, we go through a more expensive code path
       // that renders each character separately with the correct spacing
@@ -627,7 +627,7 @@ class BitmapCanvas extends EngineCanvas {
       final int len = line.displayText!.length;
       for (int i = 0; i < len; i++) {
         final String char = line.displayText![i];
-        ctx!.fillText(char, x, y);
+        ctx.fillText(char, x, y);
         x += letterSpacing + ctx.measureText(char).width!;
       }
     }
