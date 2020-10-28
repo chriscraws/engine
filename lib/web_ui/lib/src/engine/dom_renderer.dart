@@ -45,7 +45,7 @@ class DomRenderer {
   html.MetaElement? _viewportMeta;
 
   /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [experimentalUseSkia] is set to true.
+  /// [useCanvasKit] is set to true.
   html.ScriptElement? get canvasKitScript => _canvasKitScript;
   html.ScriptElement? _canvasKitScript;
 
@@ -404,7 +404,7 @@ flt-glass-pane * {
 
     final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
-        .prepareAccesibilityPlaceholder();
+        .prepareAccessibilityPlaceholder();
 
     // Insert the semantics placeholder after the scene host. For all widgets
     // in the scene, except for platform widgets, the scene host will pass the
@@ -451,7 +451,7 @@ flt-glass-pane * {
       });
     }
 
-    if (experimentalUseSkia) {
+    if (useCanvasKit) {
       _canvasKitScript?.remove();
       _canvasKitScript = html.ScriptElement();
       _canvasKitScript!.src = canvasKitBaseUrl + 'canvaskit.js';
