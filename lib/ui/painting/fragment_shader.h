@@ -12,7 +12,8 @@
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 #include "third_party/skia/include/core/SkShader.h"
-#include "third_party/tonic/typed_data/typed_list.h"
+#include "third_party/skia/include/core/SkData.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 #include <string>
 #include <vector>
@@ -32,7 +33,7 @@ class FragmentShader : public Shader {
   static fml::RefPtr<FragmentShader> Create();
 
   void initWithSource(const std::string& source);
-  void initWithSPIRV(const tonic::Uint8List& data);
+	void initWithSPIRV(const tonic::Uint8List& data);
 
   void setTime(float time);
 
@@ -42,9 +43,8 @@ class FragmentShader : public Shader {
                 const tonic::Float64List& matrix4);
 
   void refresh();
+	void setFloatUniform(size_t i, float value);
   
-  const tonic::Float32List& uniformData() const { return *uniformData_; };
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
@@ -60,9 +60,7 @@ class FragmentShader : public Shader {
   // Since the sksl cannot be updated, the effect can be
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
-
-  std::unique_ptr<tonic::Float32List> uniformData_;
-  std::unique_ptr<SkRuntimeShaderBuilder> builder_;
+	std::vector<float> uniforms_;
 };
 
 }  // namespace flutter

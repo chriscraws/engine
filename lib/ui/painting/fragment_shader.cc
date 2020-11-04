@@ -29,6 +29,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
   V(FragmentShader, initWithSPIRV) \
   V(FragmentShader, setTime) \
   V(FragmentShader, setImage) \
+  V(FragmentShader, setFloatUniform) \
   V(FragmentShader, refresh)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -36,6 +37,12 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 void FragmentShader::initWithSource(const std::string& source) {
   initEffect(SkString(source.c_str()));
   setShader();
+}
+
+void FreeFinalizer(void* isolate_callback_data,
+                   Dart_WeakPersistentHandle handle,
+                   void* peer) {
+  free(peer);
 }
 
 void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
@@ -48,8 +55,33 @@ void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
     return;
   }
   auto sksl = transpiler->GetSkSL();
-  uniformData_ = std::make_unique<tonic::Float32List>(Dart_NewTypedData(Dart_TypedData_kFloat32, transpiler->GetUniformBufferSize()));
+	uniforms_.resize(transpiler->GetUniformBufferSize());
+	// uniform_data_.Set(
+	// 		UIDartState::Current(),
+	// 		Dart_NewExternalTypedDataWithFinalizer(
+	// 			Dart_TypedData_kFloat32,  // type
+	// 			dst,
+	// 			length,
+	// 			dst,  // peer
+	// 			size,  // external_allocation_size
+	// 			FreeFinalizer));
+
+	//uniform_data_.get()->value().Set(tonic::DartState::Current(), typed_data);
+  // auto uniform_data = Dart_NewExternalTypedData(
+	// 		Dart_TypedData_kFloat32,
+	// 		uniform_data_buffer_.data(),
+	// 		uniform_data_buffer_.size());
+	// uniform_data_handle_ = std::make_shared<tonic::DartPersistentValue>(
+	// 		tonic::DartState::Current(),
+	// 		uniform_data);
   initWithSource(sksl);
+}
+
+void FragmentShader::setFloatUniform(size_t i, float value) {
+	if (i >= uniforms_.size()) {
+    Dart_ThrowException(tonic::ToDart("Float uniform index $i is out of bounds."));
+	}
+	uniforms_[i] = value;
 }
 
 void FragmentShader::setTime(float time) {
@@ -67,8 +99,15 @@ void FragmentShader::setImage(CanvasImage* image,
 }
 
 void FragmentShader::refresh() {
-  sk_sp<SkData> uniforms = SkData::MakeWithoutCopy(uniformData_->data(), uniformData_->num_elements() * 4);
-  set_shader(UIDartState::CreateGPUObject(runtime_effect_->makeShader(uniforms, nullptr, 0, nullptr, false)));
+  set_shader(UIDartState::CreateGPUObject(
+				runtime_effect_->makeShader(
+					SkData::MakeWithCopy(
+						static_cast<void*>(uniforms_.data()),
+						uniforms_.size() * sizeof(float)),  // uniforms
+					nullptr,  // children
+					0,  // childCount
+					nullptr,  // localMatrix
+					false /* isOpaque */)));
 }
 
 void FragmentShader::initEffect(SkString sksl) {
@@ -76,9 +115,9 @@ void FragmentShader::initEffect(SkString sksl) {
   std::tie(runtime_effect_, err) = SkRuntimeEffect::Make(sksl);
   if (!runtime_effect_) {
     FML_DLOG(ERROR) << "Invalid SKSL:\n" << sksl.c_str() << "\nSKSL Error:\n" << err.c_str();
-  } else {
-    FML_DLOG(ERROR) << "Valid SKSL:\n" << sksl.c_str();
-  }
+  }// else {
+   // FML_DLOG(ERROR) << "Valid SKSL:\n" << sksl.c_str();
+   //}
 }
 
 // Creates a builder and sets time uniform and image child if
@@ -87,24 +126,7 @@ void FragmentShader::initEffect(SkString sksl) {
 // After any uniforms/children are set on the builser, the shader is 
 // created and set.
 void FragmentShader::setShader() {
-  // This can be re-used after
-  // https://github.com/google/skia/commit/b6bd0d2094b6d81cd22eba60ea91e311fe536d27
-  // TODO(clocksmith): Only create one builder for the life of the FragmentShader.
-  builder_ = std::make_unique<SkRuntimeShaderBuilder>(runtime_effect_);
-
-  // Only update the time if the uniform is declared in the program.
-  SkRuntimeShaderBuilder::BuilderUniform t_uniform = builder_->uniform("t");
-  if (t_uniform.fVar != nullptr) {
-    t_uniform = t_;
-  }
-
-  // Only update the input if the child is declared in the program.
-  SkRuntimeShaderBuilder::BuilderChild input_child = builder_->child("input");
-  if (input_child.fIndex != -1 && input_ != nullptr) {
-    input_child = input_;
-  }
-
-  set_shader(UIDartState::CreateGPUObject(builder_->makeShader(nullptr, false)));
+  //set_shader(UIDartState::CreateGPUObject(builder_->makeShader(nullptr, false)));
 }
 
 void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
@@ -119,7 +141,7 @@ fml::RefPtr<FragmentShader> FragmentShader::Create() {
 
 FragmentShader::FragmentShader() {}
 
-FragmentShader::~FragmentShader() = default;
+FragmentShader::~FragmentShader() {}
 
 }  // namespace flutter
 
