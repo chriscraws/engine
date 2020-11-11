@@ -39,7 +39,12 @@ void FragmentShader::initWithSource(const std::string& source) {
   setShader();
 }
 
-void FragmentShader::initWithSPIRV(const tonic::Uint8List& data) {
+void FragmentShader::initWithSPIRV(const tonic::Uint8List& data, Dart_Handle children) {
+  std::vector<CanvasImage*> images =
+    tonic::DartConverter<std::vector<CanvasImage*>>::FromDart(children);
+  for (auto & image : images) {
+    children_.push_back(image->image()->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, nullptr));
+  }
   auto transpiler = spirv::Transpiler::create();
   auto result = transpiler->Transpile(
     reinterpret_cast<const char*>(data.data()),
@@ -75,13 +80,16 @@ void FragmentShader::setFloatUniform(size_t i, float value) {
 }
 
 void FragmentShader::refresh() {
+  FML_DLOG(ERROR) << "!!!!!!! refreshing";
+  // TODO: this call is failing with: `../../third_party/skia/src/core/SkData.cpp:106: fatal error: "assert(src)"`
   set_shader(UIDartState::CreateGPUObject(
     runtime_effect_->makeShader(
       SkData::MakeWithCopy(uniforms_.data(), uniforms_.size() * sizeof(float)),
-        nullptr,
-        0,
-        nullptr,
-        false)));
+      children_.data(),
+      children_.size(),
+      nullptr,
+      false)));
+  FML_DLOG(ERROR) << "!!!!!!! refreshed";
 }
 
 void FragmentShader::initEffect(SkString sksl) {
