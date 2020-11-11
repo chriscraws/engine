@@ -32,7 +32,7 @@ class FragmentShader : public Shader {
   static fml::RefPtr<FragmentShader> Create();
 
   void initWithSource(const std::string& source);
-  void initWithSPIRV(const tonic::Uint8List& data);
+  void initWithSPIRV(const tonic::Uint8List& data, Dart_Handle children);
 
   void setTime(float time);
 
@@ -54,6 +54,7 @@ class FragmentShader : public Shader {
   void initEffect(SkString sksl);
 
   // Variables that require setShader() to be called when changed.
+  // TODO(clocksmith): Remove these in favor of vector-based uniform setting/updating.
   float t_;
   sk_sp<SkShader> input_;
 
@@ -62,6 +63,9 @@ class FragmentShader : public Shader {
   sk_sp<SkRuntimeEffect> runtime_effect_;
 
   std::vector<float> uniforms_;
+  std::vector<sk_sp<SkShader>> children_;
+
+  // TODO(clocksmith): Remove this after everything uses vector-based uniform setting/updating.
   std::unique_ptr<SkRuntimeShaderBuilder> builder_;
 };
 

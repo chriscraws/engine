@@ -3501,16 +3501,16 @@ class FragmentShader extends Shader {
   }
 
   @pragma('vm:entry-point')
-  FragmentShader.spirv(Uint8List spirv) :
+  FragmentShader.spirv(Uint8List spirv, List<Image> children) :
     assert(spirv != null), // ignore: unnecessary_null_comparison
     super._() {
     _constructor();
-    _initWithSPIRV(spirv);
+    _initWithSPIRV(spirv, children.map((image) => image._image).toList());
   }
 
   void _constructor() native 'FragmentShader_constructor';
   void _initWithSource(String source) native 'FragmentShader_initWithSource';
-  void _initWithSPIRV(Uint8List spirv) native 'FragmentShader_initWithSPIRV';
+  void _initWithSPIRV(Uint8List spirv, List<_Image> children) native 'FragmentShader_initWithSPIRV';
 
   /// TODO(clocksmith): Public docs.
   void setTime(double time) native 'FragmentShader_setTime';  
@@ -3520,6 +3520,8 @@ class FragmentShader extends Shader {
 
   /// TODO(clocksmith): Public Docs. 
   void setFloatUniform(int i, double value) native 'FragmentShader_setFloatUniform';
+
+  // void setImageUniform(int i, Image image, TileMode tmx, TileMode tmy, Float64List matrix4) native 'FragmentShader_setImageUniform';
 
   /// TODO(clocksmith): Public Docs. 
   void refresh() native 'FragmentShader_refresh';
