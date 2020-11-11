@@ -80,16 +80,13 @@ void FragmentShader::setFloatUniform(size_t i, float value) {
 }
 
 void FragmentShader::refresh() {
-  FML_DLOG(ERROR) << "!!!!!!! refreshing";
-  // TODO: this call is failing with: `../../third_party/skia/src/core/SkData.cpp:106: fatal error: "assert(src)"`
   set_shader(UIDartState::CreateGPUObject(
     runtime_effect_->makeShader(
-      SkData::MakeWithCopy(uniforms_.data(), uniforms_.size() * sizeof(float)),
+      uniforms_.size() == 0 ? SkData::MakeEmpty() : SkData::MakeWithCopy(uniforms_.data(), uniforms_.size() * sizeof(float)),
       children_.data(),
       children_.size(),
       nullptr,
       false)));
-  FML_DLOG(ERROR) << "!!!!!!! refreshed";
 }
 
 void FragmentShader::initEffect(SkString sksl) {
