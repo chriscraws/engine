@@ -88,6 +88,8 @@ class TranspilerImpl : public Transpiler {
 
   std::unordered_map<uint32_t, std::string> imported_functions_;
 
+  bool inside_block_ = false;
+
 	std::stringstream constants_;
   std::stringstream sksl_;
 };
@@ -398,7 +400,8 @@ spv_result_t TranspilerImpl::HandleDecorate(
 
   if (linkage_type != spv::LinkageTypeImport) {
     // Ignore all non-main exports.
-    return SPV_SUCCESS;
+    last_error_msg_ = "OpDecorate: Only main can be exported.";
+    return SPV_UNSUPPORTED;
   }
 
   imported_functions_[get_operand(inst, kTargetIndex)] = name;
@@ -672,6 +675,7 @@ spv_result_t TranspilerImpl::HandleLabel(const spv_parsed_instruction_t* inst) {
         "OpLabel: The last instruction should have been OpFunctionParameter.";
     return SPV_UNSUPPORTED;
   }
+  inside_block_ = true;
   sksl_ << ") {\n";
 	sksl_ << constants_.str();
   return SPV_SUCCESS;
@@ -842,7 +846,10 @@ spv_result_t TranspilerImpl::HandleCompositeExtract(
 
 spv_result_t TranspilerImpl::HandleFunctionEnd(
     const spv_parsed_instruction_t* inst) {
-  sksl_ << "}\n";
+  if (inside_block_) {
+    sksl_ << "}\n";
+    inside_block_ = false;
+  }
   return SPV_SUCCESS;
 }
 
