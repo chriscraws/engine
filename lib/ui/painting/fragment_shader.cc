@@ -40,10 +40,10 @@ void FragmentShader::initWithSource(const std::string& source) {
 }
 
 void FragmentShader::initWithSPIRV(const tonic::Uint8List& data, Dart_Handle children) {
-  std::vector<CanvasImage*> images =
-    tonic::DartConverter<std::vector<CanvasImage*>>::FromDart(children);
-  for (auto & image : images) {
-    children_.push_back(image->image()->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, nullptr));
+  std::vector<Shader*> shaders =
+      tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
+  for (auto& shader : shaders) {
+    children_.push_back(shader->shader());
   }
   auto transpiler = spirv::Transpiler::create();
   auto result = transpiler->Transpile(
