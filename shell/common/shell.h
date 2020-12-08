@@ -11,10 +11,10 @@
 #include <unordered_map>
 
 #include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/texture.h"
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/surface.h"
-#include "flutter/flow/texture.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -253,7 +253,7 @@ class Shell final : public PlatformView::Delegate,
   const TaskRunners& GetTaskRunners() const override;
 
   //----------------------------------------------------------------------------
-  /// @brief      Rasterizers may only be accessed on the GPU task runner.
+  /// @brief      Rasterizers may only be accessed on the raster task runner.
   ///
   /// @return     A weak pointer to the rasterizer.
   ///
@@ -394,7 +394,7 @@ class Shell final : public PlatformView::Delegate,
   std::optional<fml::TimePoint> latest_frame_target_time_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
-  std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
+  std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
   std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
@@ -508,8 +508,13 @@ class Shell final : public PlatformView::Delegate,
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override;
 
   // |PlatformView::Delegate|
-  std::unique_ptr<std::vector<std::string>> ComputePlatformViewResolvedLocale(
-      const std::vector<std::string>& supported_locale_data) override;
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  // |PlatformView::Delegate|
+  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
 
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
@@ -551,6 +556,9 @@ class Shell final : public PlatformView::Delegate,
   // |Engine::Delegate|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |Engine::Delegate|
+  void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

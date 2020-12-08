@@ -122,10 +122,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   SceneUpdateContext(std::string debug_label,
                      fuchsia::ui::views::ViewToken view_token,
                      scenic::ViewRefPair view_ref_pair,
-                     SessionWrapper& session);
+                     SessionWrapper& session,
+                     bool intercept_all_input = false);
   ~SceneUpdateContext() = default;
-
-  scenic::ContainerNode& root_node() { return root_node_; }
 
   // The cumulative alpha value based on all the parent OpacityLayers.
   void set_alphaf(float alpha) { alpha_ = alpha; }
@@ -138,7 +137,7 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   void EnableWireframe(bool enable);
 
   // Reset state for a new frame.
-  void Reset();
+  void Reset(const SkISize& frame_size, float device_pixel_ratio);
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override { return nullptr; }
@@ -187,7 +186,9 @@ class SceneUpdateContext : public flutter::ExternalViewEmbedder {
   SessionWrapper& session_;
 
   scenic::View root_view_;
-  scenic::EntityNode root_node_;
+  scenic::EntityNode metrics_node_;
+  scenic::EntityNode layer_tree_node_;
+  std::optional<scenic::ShapeNode> input_interceptor_node_;
 
   std::vector<PaintTask> paint_tasks_;
 
