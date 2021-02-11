@@ -4,8 +4,8 @@
 
 // TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
-// @dart = 2.10
 
+// @dart = 2.12
 part of dart.ui;
 
 @pragma('vm:entry-point')
@@ -98,6 +98,12 @@ void _dispatchPointerDataPacket(ByteData packet) {
 
 @pragma('vm:entry-point')
 // ignore: unused_element
+void _dispatchKeyData(ByteData packet, int responseId) {
+  PlatformDispatcher.instance._dispatchKeyData(packet, responseId);
+}
+
+@pragma('vm:entry-point')
+// ignore: unused_element
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
@@ -126,10 +132,14 @@ typedef _ListStringArgFunction(List<String> args);
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction,
+                   Function? dartPluginRegistrant,
                    Function userMainFunction,
                    List<String> args) {
   startMainIsolateFunction(() {
     runZonedGuarded<void>(() {
+      if (dartPluginRegistrant != null) {
+        dartPluginRegistrant();
+      }
       if (userMainFunction is _ListStringArgFunction) {
         (userMainFunction as dynamic)(args);
       } else {
@@ -159,6 +169,10 @@ void _invoke(void Function()? callback, Zone zone) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg].
+///
+/// The 1 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
 void _invoke1<A>(void Function(A a)? callback, Zone zone, A arg) {
   if (callback == null) {
     return;
@@ -173,14 +187,33 @@ void _invoke1<A>(void Function(A a)? callback, Zone zone, A arg) {
   }
 }
 
+/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+///
+/// The 2 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke2<A1, A2>(void Function(A1 a1, A2 a2)? callback, Zone zone, A1 arg1, A2 arg2) {
+  if (callback == null) {
+    return;
+  }
+
+  assert(zone != null); // ignore: unnecessary_null_comparison
+
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2);
+  } else {
+    zone.runGuarded(() {
+      callback(arg1, arg2);
+    });
+  }
+}
+
 /// Invokes [callback] inside the given [zone] passing it [arg1], [arg2], and [arg3].
-void _invoke3<A1, A2, A3>(
-  void Function(A1 a1, A2 a2, A3 a3)? callback,
-  Zone zone,
-  A1 arg1,
-  A2 arg2,
-  A3 arg3,
-) {
+///
+/// The 3 in the name refers to the number of arguments expected by
+/// the callback (and thus passed to this function, in addition to the
+/// callback itself and the zone in which the callback is executed).
+void _invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback, Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null) {
     return;
   }

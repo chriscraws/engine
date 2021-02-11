@@ -28,7 +28,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
-import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
@@ -129,7 +128,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // due to the time required to communicate tree changes from Flutter to Android.
   //
   // See the Flutter docs on SemanticsNode:
-  // https://docs.flutter.io/flutter/semantics/SemanticsNode-class.html
+  // https://api.flutter.dev/flutter/semantics/SemanticsNode-class.html
   @NonNull private final Map<Integer, SemanticsNode> flutterSemanticsTree = new HashMap<>();
 
   // The set of all custom Flutter accessibility actions that are present in the running
@@ -142,7 +141,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // custom accessibility actions,
   // https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.
   // Flutter supports custom accessibility actions via {@code customSemanticsActions} within
-  // a {@code Semantics} widget, https://docs.flutter.io/flutter/widgets/Semantics-class.html.
+  // a {@code Semantics} widget, https://api.flutter.dev/flutter/widgets/Semantics-class.html.
   // {@code customAccessibilityActions} are an Android-side cache of all custom accessibility
   // types declared within the running Flutter app.
   //
@@ -155,7 +154,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction
   //
   // See the Flutter documentation for the Semantics widget:
-  // https://docs.flutter.io/flutter/widgets/Semantics-class.html
+  // https://api.flutter.dev/flutter/widgets/Semantics-class.html
   @NonNull
   private final Map<Integer, CustomAccessibilityAction> customAccessibilityActions =
       new HashMap<>();
@@ -206,6 +205,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // The widget within Flutter that currently sits beneath a cursor, e.g,
   // beneath a stylus or mouse cursor.
   @Nullable private SemanticsNode hoveredObject;
+
+  @VisibleForTesting
+  public int getHoveredObjectId() {
+    return hoveredObject.id;
+  }
 
   // A Java/Android cached representation of the Flutter app's navigation stack. The Flutter
   // navigation stack is tracked so that accessibility announcements can be made during Flutter's
@@ -553,8 +557,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (semanticsNode.platformViewId != -1) {
       View embeddedView =
           platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
-      boolean childUsesVirtualDisplay = !(embeddedView.getContext() instanceof FlutterActivity);
-      if (childUsesVirtualDisplay) {
+      if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
         Rect bounds = semanticsNode.getGlobalRect();
         return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
       }
@@ -848,8 +851,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // mirrored.
         //
         // See the case above for how virtual displays are handled.
-        boolean childUsesHybridComposition = embeddedView.getContext() instanceof FlutterActivity;
-        if (childUsesHybridComposition) {
+        if (!platformViewsAccessibilityDelegate.usesVirtualDisplay(child.platformViewId)) {
           result.addChild(embeddedView);
           continue;
         }
@@ -1835,13 +1837,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * custom accessibility actions,
    * https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction.
    * Flutter supports custom accessibility actions via {@code customSemanticsActions} within a
-   * {@code Semantics} widget, https://docs.flutter.io/flutter/widgets/Semantics-class.html.
+   * {@code Semantics} widget, https://api.flutter.dev/flutter/widgets/Semantics-class.html.
    *
    * <p>See the Android documentation for custom accessibility actions:
    * https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction
    *
    * <p>See the Flutter documentation for the Semantics widget:
-   * https://docs.flutter.io/flutter/widgets/Semantics-class.html
+   * https://api.flutter.dev/flutter/widgets/Semantics-class.html
    */
   private static class CustomAccessibilityAction {
     CustomAccessibilityAction() {}
@@ -1853,7 +1855,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // The Flutter ID of this custom accessibility action. See Flutter's Semantics widget for
     // custom accessibility action definitions:
-    // https://docs.flutter.io/flutter/widgets/Semantics-class.html
+    // https://api.flutter.dev/flutter/widgets/Semantics-class.html
     private int id = -1;
 
     // The ID of the standard Flutter accessibility action that this {@code
@@ -2180,7 +2182,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           return result;
         }
       }
-      return this;
+      return isFocusable() ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information

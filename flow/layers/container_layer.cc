@@ -23,7 +23,7 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void ContainerLayer::Paint(PaintContext& context) const {
-  FML_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting(context));
 
   PaintChildren(context);
 }
@@ -43,6 +43,7 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   // always be false.
   FML_DCHECK(!context->has_platform_view);
   bool child_has_platform_view = false;
+  bool child_has_texture_layer = false;
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
     // as if they have a platform view based on one being previously found in a
@@ -58,9 +59,12 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
     child_has_platform_view =
         child_has_platform_view || context->has_platform_view;
+    child_has_texture_layer =
+        child_has_texture_layer || context->has_texture_layer;
   }
 
   context->has_platform_view = child_has_platform_view;
+  context->has_texture_layer = child_has_texture_layer;
 
 #if defined(LEGACY_FUCHSIA_EMBEDDER)
   if (child_layer_exists_below_) {
@@ -72,12 +76,16 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FML_DCHECK(needs_painting());
+  // We can no longer call FML_DCHECK here on the needs_painting(context)
+  // condition as that test is only valid for the PaintContext that
+  // is initially handed to a layer's Paint() method. By the time the
+  // layer calls PaintChildren(), though, it may have modified the
+  // PaintContext so the test doesn't work in this "context".
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
   for (auto& layer : layers_) {
-    if (layer->needs_painting()) {
+    if (layer->needs_painting(context)) {
       layer->Paint(context);
     }
   }
@@ -86,7 +94,8 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
                                              Layer* layer,
                                              const SkMatrix& matrix) {
-  if (!context->has_platform_view && context->raster_cache &&
+  if (!context->has_platform_view && !context->has_texture_layer &&
+      context->raster_cache &&
       SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
     context->raster_cache->Prepare(context, layer, matrix);
   }
@@ -110,7 +119,7 @@ void ContainerLayer::UpdateSceneChildren(
   if (child_layer_exists_below_) {
     frame.emplace(
         context, SkRRect::MakeRect(paint_bounds()), SK_ColorTRANSPARENT,
-        SkScalarRoundToInt(context->alphaf() * 255), "flutter::ContainerLayer");
+        SkScalarRoundToInt(context->alphaf() * 255), "flutter::Layer");
     frame->AddPaintLayer(this);
   }
 

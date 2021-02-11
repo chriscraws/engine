@@ -75,6 +75,12 @@ class AngleSurfaceManager {
   void CleanUp();
 
  private:
+  // Attempts to initialize EGL using ANGLE.
+  bool InitializeEGL(
+      PFNEGLGETPLATFORMDISPLAYEXTPROC egl_get_platform_display_EXT,
+      const EGLint* config,
+      bool should_log);
+
   // EGL representation of native display.
   EGLDisplay egl_display_;
 

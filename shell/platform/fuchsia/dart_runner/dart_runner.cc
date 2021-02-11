@@ -83,9 +83,18 @@ void IsolateShutdownCallback(void* isolate_group_data, void* isolate_data) {
   auto dispatcher = async_get_default_dispatcher();
   auto loop = async_loop_from_dispatcher(dispatcher);
   if (loop) {
-    tonic::DartMicrotaskQueue::GetForCurrentThread()->Destroy();
+    tonic::DartMicrotaskQueue* queue =
+        tonic::DartMicrotaskQueue::GetForCurrentThread();
+    if (queue) {
+      queue->Destroy();
+    }
+
     async_loop_quit(loop);
   }
+
+  auto state =
+      static_cast<std::shared_ptr<tonic::DartState>*>(isolate_group_data);
+  state->get()->SetIsShuttingDown();
 }
 
 void IsolateGroupCleanupCallback(void* isolate_group_data) {

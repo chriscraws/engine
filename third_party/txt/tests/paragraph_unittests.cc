@@ -1484,6 +1484,36 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderLongestLine)) {
   ASSERT_TRUE(paragraph->longest_line_ >= 50);
 }
 
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderIntrinsicWidth)) {
+  const char* text = "A ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::PlaceholderRun placeholder_run(50, 50, PlaceholderAlignment::kBaseline,
+                                      TextBaseline::kAlphabetic, 0);
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 20;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+  builder.AddPlaceholder(placeholder_run);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(GetTestCanvasWidth());
+
+  ASSERT_DOUBLE_EQ(paragraph->GetMinIntrinsicWidth(), 50);
+  ASSERT_DOUBLE_EQ(paragraph->GetMaxIntrinsicWidth(), 68);
+}
+
 #if OS_LINUX
 // Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
 // to not interfere with the placeholder box layout.
@@ -2429,6 +2459,55 @@ TEST_F(ParagraphTest, LINUX_ONLY(JustifyRTLNewLine)) {
   for (size_t i = 0; i < paragraph->glyph_lines_.size(); ++i) {
     ASSERT_EQ(glyph_line_width(i), paragraph_width);
   }
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyPlaceholder)) {
+  const char* text1 = "A ";
+  auto icu_text1 = icu::UnicodeString::fromUTF8(text1);
+  std::u16string u16_text1(icu_text1.getBuffer(),
+                           icu_text1.getBuffer() + icu_text1.length());
+
+  txt::PlaceholderRun placeholder_run(60, 60, PlaceholderAlignment::kBaseline,
+                                      TextBaseline::kAlphabetic, 0);
+
+  const char* text2 = " B CCCCC";
+  auto icu_text2 = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text2.getBuffer(),
+                           icu_text2.getBuffer() + icu_text2.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.text_align = TextAlign::justify;
+  txt::ParagraphBuilderTxt builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Ahem");
+  text_style.font_size = 20;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text1);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddText(u16_text2);
+
+  builder.Pop();
+
+  auto paragraph = BuildParagraph(builder);
+  paragraph->Layout(200);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+
+  // Check location of placeholder at the center of the line.
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(2, 3, rect_height_style, rect_width_style);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 70);
+
+  // Check location of character B at the end of the line.
+  boxes =
+      paragraph->GetRectsForRange(4, 5, rect_height_style, rect_width_style);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 180);
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeadingSpaceRTL)) {

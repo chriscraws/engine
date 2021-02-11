@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 
 import android.app.Activity;
 import android.content.Context;
@@ -21,7 +22,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
-import io.flutter.app.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
@@ -306,8 +306,10 @@ import java.util.Arrays;
     return flutterSplashView;
   }
 
-  void onActivityCreated(@Nullable Bundle bundle) {
-    Log.v(TAG, "onActivityCreated. Giving framework and plugins an opportunity to restore state.");
+  void onRestoreInstanceState(@Nullable Bundle bundle) {
+    Log.v(
+        TAG,
+        "onRestoreInstanceState. Giving framework and plugins an opportunity to restore state.");
     ensureAlive();
 
     Bundle pluginState = null;
@@ -365,7 +367,10 @@ import java.util.Arrays;
     }
     String initialRoute = host.getInitialRoute();
     if (initialRoute == null) {
-      initialRoute = getInitialRouteFromIntent(host.getActivity().getIntent());
+      initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+      if (initialRoute == null) {
+        initialRoute = DEFAULT_INITIAL_ROUTE;
+      }
     }
     Log.v(
         TAG,
@@ -376,9 +381,7 @@ import java.util.Arrays;
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
-    if (initialRoute != null) {
-      flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
-    }
+    flutterEngine.getNavigationChannel().setInitialRoute(initialRoute);
 
     String appBundlePathOverride = host.getAppBundlePath();
     if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
@@ -392,10 +395,16 @@ import java.util.Arrays;
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
   }
 
-  private String getInitialRouteFromIntent(Intent intent) {
-    Uri data = intent.getData();
-    if (data != null && !data.toString().isEmpty()) {
-      return data.toString();
+  private String maybeGetInitialRouteFromIntent(Intent intent) {
+    if (host.shouldHandleDeeplinking()) {
+      Uri data = intent.getData();
+      if (data != null && !data.getPath().isEmpty()) {
+        String pathAndQuery = data.getPath();
+        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+          pathAndQuery += "?" + data.getQuery();
+        }
+        return pathAndQuery;
+      }
     }
     return null;
   }
@@ -636,7 +645,7 @@ import java.util.Arrays;
     if (flutterEngine != null) {
       Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine and sending pushRoute message.");
       flutterEngine.getActivityControlSurface().onNewIntent(intent);
-      String initialRoute = getInitialRouteFromIntent(intent);
+      String initialRoute = maybeGetInitialRouteFromIntent(intent);
       if (initialRoute != null && !initialRoute.isEmpty()) {
         flutterEngine.getNavigationChannel().pushRoute(initialRoute);
       }
@@ -746,10 +755,17 @@ import java.util.Arrays;
    * FlutterActivityAndFragmentDelegate}.
    */
   /* package */ interface Host
-      extends SplashScreenProvider, FlutterEngineProvider, FlutterEngineConfigurator {
+      extends SplashScreenProvider,
+          FlutterEngineProvider,
+          FlutterEngineConfigurator,
+          PlatformPlugin.PlatformPluginDelegate {
     /** Returns the {@link Context} that backs the host {@link Activity} or {@code Fragment}. */
     @NonNull
     Context getContext();
+
+    /** Returns true if the delegate should retrieve the initial route from the {@link Intent}. */
+    @Nullable
+    boolean shouldHandleDeeplinking();
 
     /**
      * Returns the host {@link Activity} or the {@code Activity} that is currently attached to the
@@ -892,10 +908,11 @@ import java.util.Arrays;
     /**
      * Whether state restoration is enabled.
      *
-     * <p>When this returns true, the instance state provided to {@code onActivityCreated(Bundle)}
-     * will be forwarded to the framework via the {@code RestorationChannel} and during {@code
-     * onSaveInstanceState(Bundle)} the current framework instance state obtained from {@code
-     * RestorationChannel} will be stored in the provided bundle.
+     * <p>When this returns true, the instance state provided to {@code
+     * onRestoreInstanceState(Bundle)} will be forwarded to the framework via the {@code
+     * RestorationChannel} and during {@code onSaveInstanceState(Bundle)} the current framework
+     * instance state obtained from {@code RestorationChannel} will be stored in the provided
+     * bundle.
      *
      * <p>This defaults to true, unless a cached engine is used.
      */

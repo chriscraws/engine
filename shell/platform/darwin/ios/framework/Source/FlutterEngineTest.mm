@@ -5,8 +5,10 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+#import "flutter/common/settings.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 
 FLUTTER_ASSERT_ARC
@@ -100,6 +102,25 @@ FLUTTER_ASSERT_ARC
                                        message:encodedSetInitialRouteMethod]);
 }
 
+- (void)testPlatformViewsControllerRenderingMetalBackend {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine run];
+  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
+
+  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kMetal);
+}
+
+- (void)testPlatformViewsControllerRenderingSoftware {
+  auto settings = FLTDefaultSettingsForBundle();
+  settings.enable_software_rendering = true;
+  FlutterDartProject* project = [[FlutterDartProject alloc] initWithSettings:settings];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine run];
+  flutter::IOSRenderingAPI renderingApi = [engine platformViewsRenderingAPI];
+
+  XCTAssertEqual(renderingApi, flutter::IOSRenderingAPI::kSoftware);
+}
+
 - (void)testWaitForFirstFrameTimeout {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
@@ -111,6 +132,30 @@ FLUTTER_ASSERT_ARC
                      }
                    }];
   [self waitForExpectationsWithTimeout:1 handler:nil];
+}
+
+- (void)testSpawn {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  [engine run];
+  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil libraryURI:nil];
+  XCTAssertNotNil(spawn);
+}
+
+- (void)testDeallocNotification {
+  XCTestExpectation* deallocNotification = [self expectationWithDescription:@"deallocNotification"];
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  id<NSObject> observer;
+  @autoreleasepool {
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+    observer = [center addObserverForName:FlutterEngineWillDealloc
+                                   object:engine
+                                    queue:[NSOperationQueue mainQueue]
+                               usingBlock:^(NSNotification* note) {
+                                 [deallocNotification fulfill];
+                               }];
+  }
+  [self waitForExpectationsWithTimeout:1 handler:nil];
+  [center removeObserver:observer];
 }
 
 @end

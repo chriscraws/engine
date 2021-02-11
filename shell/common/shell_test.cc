@@ -22,7 +22,7 @@ namespace testing {
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                       ThreadHost::Type::UI | ThreadHost::Type::GPU) {}
+                       ThreadHost::Type::UI | ThreadHost::Type::RASTER) {}
 
 void ShellTest::SendEnginePlatformMessage(
     Shell* shell,
@@ -326,7 +326,7 @@ std::unique_ptr<Shell> ShellTest::CreateShell(
     }
   };
   return Shell::Create(
-      task_runners, settings,
+      flutter::PlatformData(), task_runners, settings,
       [vsync_clock, &create_vsync_waiter,
        shell_test_external_view_embedder](Shell& shell) {
         return ShellTestPlatformView::Create(

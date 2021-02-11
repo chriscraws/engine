@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.10
+// @dart = 2.12
 part of dart.ui;
 
 /// A view into which a Flutter [Scene] is drawn.
@@ -312,7 +312,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views], or
   /// [systemGestureInsets] values change.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// See [PlatformDispatcher.onMetricsChanged] for more information.
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
@@ -322,7 +322,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// The system-reported default locale of the device.
   ///
-  /// {@template flutter.lib.ui.window.accessorForwardWarning}
+  /// {@template dart.ui.window.accessorForwardWarning}
   /// Accessing this value returns the value contained in the
   /// [PlatformDispatcher] singleton, so instead of getting it from here, you
   /// should consider getting it from `WidgetsBinding.instance.platformDispatcher` instead
@@ -340,11 +340,11 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// This is equivalent to `locales.first` and will provide an empty non-null
   /// locale if the [locales] list has not been set or is empty.
-  Locale? get locale => platformDispatcher.locale;
+  Locale get locale => platformDispatcher.locale;
 
   /// The full system-reported supported locales of the device.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This establishes the language and formatting conventions that window
   /// should, if possible, use to render their user interface.
@@ -358,7 +358,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale>? get locales => platformDispatcher.locales;
+  List<Locale> get locales => platformDispatcher.locales;
 
   /// Performs the platform-native locale resolution.
   ///
@@ -374,7 +374,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -390,7 +390,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// The lifecycle state immediately after dart isolate initialization.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This property will not be updated as the lifecycle changes.
   ///
@@ -400,7 +400,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// The system-reported text scale.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This establishes the text scaling factor to use when rendering text,
   /// according to the user's platform preferences.
@@ -417,14 +417,14 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This option is used by [showTimePicker].
   bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
 
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -440,7 +440,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// The setting indicating the current brightness mode of the host platform.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// If the platform has no preference, [platformBrightness] defaults to
   /// [Brightness.light].
@@ -448,7 +448,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -466,7 +466,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// time to provide a scene using the [SceneBuilder] API and the [render]
   /// method.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// When possible, this is driven by the hardware VSync signal. This is only
   /// called if [scheduleFrame] has been called since the last time this
@@ -493,7 +493,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked for each frame after [onBeginFrame] has
   /// completed and after the microtask queue has been drained.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This can be used to implement a second phase of frame rendering that
   /// happens after any deferred work queued by the [onBeginFrame] phase.
@@ -515,7 +515,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked to report the [FrameTiming] of recently
   /// rasterized frames.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// It's prefered to use [SchedulerBinding.addTimingsCallback] than to use
   /// [SingletonFlutterWindow.onReportTimings] directly because
@@ -542,7 +542,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when pointer data is available.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -556,10 +556,19 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onPointerDataPacket = callback;
   }
 
+  /// A callback that is invoked when key data is available.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  KeyDataCallback? get onKeyData => platformDispatcher.onKeyData;
+  set onKeyData(KeyDataCallback? callback) {
+    platformDispatcher.onKeyData = callback;
+  }
+
   /// The route or path that the embedder requested when the application was
   /// launched.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This will be the string "`/`" if no particular route was requested.
   ///
@@ -589,7 +598,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
   /// [onDrawFrame] callbacks be invoked.
   ///
-  /// {@template flutter.lib.ui.window.functionForwardWarning}
+  /// {@template dart.ui.window.functionForwardWarning}
   /// Calling this function forwards the call to the same function on the
   /// [PlatformDispatcher] singleton, so instead of calling it here, you should
   /// consider calling it on `WidgetsBinding.instance.platformDispatcher` instead (or, when
@@ -607,7 +616,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
@@ -615,7 +624,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -627,7 +636,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// This callback is used when the user expresses the action they wish to
   /// perform based on the semantics supplied by [updateSemantics].
@@ -644,7 +653,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -655,7 +664,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// Change the retained semantics data about this window.
   ///
-  /// {@macro flutter.lib.ui.window.functionForwardWarning}
+  /// {@macro dart.ui.window.functionForwardWarning}
   ///
   /// If [semanticsEnabled] is true, the user has requested that this function
   /// be called whenever the semantic content of this window changes.
@@ -666,7 +675,7 @@ class SingletonFlutterWindow extends FlutterWindow {
 
   /// Sends a message to a platform-specific plugin.
   ///
-  /// {@macro flutter.lib.ui.window.functionForwardWarning}
+  /// {@macro dart.ui.window.functionForwardWarning}
   ///
   /// The `name` parameter determines which plugin receives the message. The
   /// `data` parameter contains the message payload and is typically UTF-8
@@ -684,7 +693,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// The `name` parameter determines which plugin sent the message. The `data`
   /// parameter is the payload and is typically UTF-8 encoded JSON but can be
@@ -696,6 +705,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
+  // TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
   PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback) {
     platformDispatcher.onPlatformMessage = callback;
@@ -704,7 +714,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// Set the debug name associated with this platform dispatcher's root
   /// isolate.
   ///
-  /// {@macro flutter.lib.ui.window.accessorForwardWarning}
+  /// {@macro dart.ui.window.accessorForwardWarning}
   ///
   /// Normally debug names are automatically generated from the Dart port, entry
   /// point, and source file. For example: `main.dart$main-1234`.
@@ -794,220 +804,6 @@ class AccessibilityFeatures {
   int get hashCode => _index.hashCode;
 }
 
-/// A soon-to-be deprecated class that is wholly replaced by
-/// [SingletonFlutterWindow].
-///
-/// This class will be removed once the framework no longer refers to it.
-// In order for the documentation build to succeed, this interface duplicates
-// all of the methods with documentation, overrides them, and calls the super
-// implementation. Once this merges into the framework and the framework
-// references to it can be updated, this class will be removed entirely.
-class Window extends SingletonFlutterWindow {
-  Window._(Object windowId, PlatformDispatcher platformDispatcher)
-      : super._(windowId, platformDispatcher);
-
-  @override
-  // ignore: unnecessary_overrides
-  double get devicePixelRatio => super.devicePixelRatio;
-
-  @override
-  // ignore: unnecessary_overrides
-  Rect get physicalGeometry => super.physicalGeometry;
-
-  @override
-  // ignore: unnecessary_overrides
-  Size get physicalSize => super.physicalSize;
-
-  @override
-  // ignore: unnecessary_overrides
-  WindowPadding get viewInsets => super.viewInsets;
-
-  @override
-  // ignore: unnecessary_overrides
-  WindowPadding get viewPadding => super.viewPadding;
-
-  @override
-  // ignore: unnecessary_overrides
-  WindowPadding get systemGestureInsets => super.systemGestureInsets;
-
-  @override
-  // ignore: unnecessary_overrides
-  WindowPadding get padding => super.padding;
-
-  @override
-  // ignore: unnecessary_overrides
-  void render(Scene scene) => super.render(scene);
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onMetricsChanged => super.onMetricsChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onMetricsChanged(VoidCallback? callback) {
-    super.onMetricsChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  Locale? get locale => super.locale;
-
-  @override
-  // ignore: unnecessary_overrides
-  List<Locale>? get locales => super.locales;
-
-  @override
-  // ignore: unnecessary_overrides
-  Locale? computePlatformResolvedLocale(List<Locale> supportedLocales) {
-    return super.computePlatformResolvedLocale(supportedLocales);
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onLocaleChanged => super.onLocaleChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onLocaleChanged(VoidCallback? callback) {
-    super.onLocaleChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  String get initialLifecycleState => super.initialLifecycleState;
-
-  @override
-  // ignore: unnecessary_overrides
-  double get textScaleFactor => super.textScaleFactor;
-
-  @override
-  // ignore: unnecessary_overrides
-  bool get alwaysUse24HourFormat => super.alwaysUse24HourFormat;
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onTextScaleFactorChanged => super.onTextScaleFactorChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onTextScaleFactorChanged(VoidCallback? callback) {
-    super.onTextScaleFactorChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  Brightness get platformBrightness => super.platformBrightness;
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onPlatformBrightnessChanged => super.onPlatformBrightnessChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onPlatformBrightnessChanged(VoidCallback? callback) {
-    super.onPlatformBrightnessChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  FrameCallback? get onBeginFrame => super.onBeginFrame;
-  @override
-  // ignore: unnecessary_overrides
-  set onBeginFrame(FrameCallback? callback) {
-    super.onBeginFrame = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onDrawFrame => super.onDrawFrame;
-  @override
-  // ignore: unnecessary_overrides
-  set onDrawFrame(VoidCallback? callback) {
-    super.onDrawFrame = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  TimingsCallback? get onReportTimings => super.onReportTimings;
-  @override
-  // ignore: unnecessary_overrides
-  set onReportTimings(TimingsCallback? callback) {
-    super.onReportTimings = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  PointerDataPacketCallback? get onPointerDataPacket => super.onPointerDataPacket;
-  @override
-  // ignore: unnecessary_overrides
-  set onPointerDataPacket(PointerDataPacketCallback? callback) {
-    super.onPointerDataPacket = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  String get defaultRouteName => super.defaultRouteName;
-
-  @override
-  // ignore: unnecessary_overrides
-  void scheduleFrame() => super.scheduleFrame();
-
-  @override
-  // ignore: unnecessary_overrides
-  bool get semanticsEnabled => super.semanticsEnabled;
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onSemanticsEnabledChanged => super.onSemanticsEnabledChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onSemanticsEnabledChanged(VoidCallback? callback) {
-    super.onSemanticsEnabledChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  SemanticsActionCallback? get onSemanticsAction => super.onSemanticsAction;
-  @override
-  // ignore: unnecessary_overrides
-  set onSemanticsAction(SemanticsActionCallback? callback) {
-    super.onSemanticsAction = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  AccessibilityFeatures get accessibilityFeatures => super.accessibilityFeatures;
-
-  @override
-  // ignore: unnecessary_overrides
-  VoidCallback? get onAccessibilityFeaturesChanged =>
-      super.onAccessibilityFeaturesChanged;
-  @override
-  // ignore: unnecessary_overrides
-  set onAccessibilityFeaturesChanged(VoidCallback? callback) {
-    super.onAccessibilityFeaturesChanged = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  void updateSemantics(SemanticsUpdate update) => super.updateSemantics(update);
-
-  @override
-  // ignore: unnecessary_overrides
-  void sendPlatformMessage(String name, ByteData? data, PlatformMessageResponseCallback? callback) {
-    super.sendPlatformMessage(name, data, callback);
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  PlatformMessageCallback? get onPlatformMessage => super.onPlatformMessage;
-  @override
-  // ignore: unnecessary_overrides
-  set onPlatformMessage(PlatformMessageCallback? callback) {
-    super.onPlatformMessage = callback;
-  }
-
-  @override
-  // ignore: unnecessary_overrides
-  void setIsolateDebugName(String name) => super.setIsolateDebugName(name);
-}
-
 /// Describes the contrast of a theme or color palette.
 enum Brightness {
   /// The color is dark and will require a light text color to achieve readable
@@ -1052,4 +848,4 @@ enum Brightness {
 /// * [PlatformDispatcher.views], contains the current list of Flutter windows
 ///   belonging to the application, including top level application windows like
 ///   this one.
-final Window window = Window._(0, PlatformDispatcher.instance);
+final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);

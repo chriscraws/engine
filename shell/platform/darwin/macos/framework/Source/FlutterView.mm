@@ -3,83 +3,97 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSSwitchableGLContext.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 #import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () <FlutterResizeSynchronizerDelegate> {
+@interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
-  FlutterResizeSynchronizer* resizeSynchronizer;
-  FlutterSurfaceManager* surfaceManager;
+  FlutterResizeSynchronizer* _resizeSynchronizer;
+  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
 }
 
 @end
 
 @implementation FlutterView
 
-- (instancetype)initWithShareContext:(NSOpenGLContext*)shareContext
-                     reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  return [self initWithFrame:NSZeroRect shareContext:shareContext reshapeListener:reshapeListener];
-}
-
-- (instancetype)initWithFrame:(NSRect)frame
-                 shareContext:(NSOpenGLContext*)shareContext
-              reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  self = [super initWithFrame:frame];
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                     commandQueue:(id<MTLCommandQueue>)commandQueue
+                  reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  self = [super initWithFrame:NSZeroRect];
   if (self) {
-    self.openGLContext = [[NSOpenGLContext alloc] initWithFormat:shareContext.pixelFormat
-                                                    shareContext:shareContext];
-
     [self setWantsLayer:YES];
-
-    resizeSynchronizer = [[FlutterResizeSynchronizer alloc] initWithDelegate:self];
-    surfaceManager = [[FlutterSurfaceManager alloc] initWithLayer:self.layer
-                                                    openGLContext:self.openGLContext];
-
+    [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider = [[FlutterMetalResizableBackingStoreProvider alloc]
+        initWithDevice:device
+          commandQueue:commandQueue
+            metalLayer:reinterpret_cast<CAMetalLayer*>(self.layer)];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
   return self;
 }
 
-- (void)resizeSynchronizerFlush:(FlutterResizeSynchronizer*)synchronizer {
-  flutter::GLContextSwitch context_switch(
-      std::make_unique<MacOSSwitchableGLContext>(self.openGLContext));
-  glFlush();
+#ifdef SHELL_ENABLE_METAL
++ (Class)layerClass {
+  return [CAMetalLayer class];
 }
 
-- (void)resizeSynchronizerCommit:(FlutterResizeSynchronizer*)synchronizer {
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
+- (CALayer*)makeBackingLayer {
+  CAMetalLayer* metalLayer = [CAMetalLayer layer];
+  // This is set to true to synchronize the presentation of the layer and its contents with Core
+  // Animation. When presenting the texture see `[FlutterMetalResizableBackingStoreProvider
+  // resizeSynchronizerCommit:]` we start a CATransaction and wait for the command buffer to be
+  // scheduled. This ensures that the resizing process is smooth.
+  metalLayer.presentsWithTransaction = YES;
+  metalLayer.autoresizingMask = kCALayerHeightSizable | kCALayerWidthSizable;
+  return metalLayer;
+}
+#endif
 
-  [surfaceManager swapBuffers];
-
-  [CATransaction commit];
+- (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
+                    reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  return [self initWithFrame:NSZeroRect mainContext:mainContext reshapeListener:reshapeListener];
 }
 
-- (int)getFrameBufferIdForSize:(CGSize)size {
-  if ([resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
-    [surfaceManager ensureSurfaceSize:size];
+- (instancetype)initWithFrame:(NSRect)frame
+                  mainContext:(NSOpenGLContext*)mainContext
+              reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
+  self = [super initWithFrame:frame];
+  if (self) {
+    [self setWantsLayer:YES];
+    _reshapeListener = reshapeListener;
+    _resizableBackingStoreProvider =
+        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
+                                                                          layer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
-  return [surfaceManager glFrameBufferId];
+  return self;
+}
+
+- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
+  if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
+    [_resizableBackingStoreProvider onBackingStoreResized:size];
+  }
+  return [_resizableBackingStoreProvider backingStore];
 }
 
 - (void)present {
-  [resizeSynchronizer requestCommit];
+  [_resizeSynchronizer requestCommit];
 }
 
 - (void)reshaped {
-  if (self.synchronousResizing) {
-    CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-    [resizeSynchronizer beginResize:scaledSize
-                             notify:^{
-                               [_reshapeListener viewDidReshape:self];
-                             }];
-  } else {
-    [_reshapeListener viewDidReshape:self];
-  }
+  CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
+  [_resizeSynchronizer beginResize:scaledSize
+                            notify:^{
+                              [_reshapeListener viewDidReshape:self];
+                            }];
 }
 
 #pragma mark - NSView overrides
