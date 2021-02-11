@@ -40,6 +40,7 @@ class TranspilerImpl : public Transpiler {
   spv_result_t HandleConstant(const spv_parsed_instruction_t* inst);
   spv_result_t HandleConstantComposite(const spv_parsed_instruction_t* inst);
   spv_result_t HandleVariable(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleVectorShuffle(const spv_parsed_instruction_t* inst);
   spv_result_t HandleFunction(const spv_parsed_instruction_t* inst);
   spv_result_t HandleFunctionParameter(const spv_parsed_instruction_t* inst);
   spv_result_t HandleFunctionCall(const spv_parsed_instruction_t* inst);
@@ -158,6 +159,9 @@ spv_result_t parse_instruction(
       break;
     case spv::OpVariable:
       result = interpreter->HandleVariable(parsed_instruction);
+      break;
+    case spv::OpVectorShuffle:
+      result = interpreter->HandleVectorShuffle(parsed_instruction);
       break;
     case spv::OpFunction:
       result = interpreter->HandleFunction(parsed_instruction);
@@ -586,6 +590,41 @@ spv_result_t TranspilerImpl::HandleVariable(
 
   sksl_ << "uniform " << ResolveType(inst->type_id) << " "
         << ResolveName(inst->result_id) << ";\n";
+
+  return SPV_SUCCESS;
+}
+
+spv_result_t TranspilerImpl::HandleVectorShuffle(const spv_parsed_instruction_t* inst) {
+  size_t float_count = ResolveTypeFloatCount(inst->type_id);
+  if (float_count < 1 || float_count > 4) {
+    last_error_msg_ = "OpVectorShuffle: Unsupported number of floats in shuffle";
+    return SPV_UNSUPPORTED;
+  }
+
+  static constexpr int kVector1Index = 2;
+  static constexpr int kVector2Index = 3;
+
+  if (get_operand(inst, kVector1Index) != get_operand(inst, kVector2Index)) {
+    last_error_msg_ = "OpVectorShuffle: Only a single vector is supported.";
+    return SPV_UNSUPPORTED;
+  }
+
+  if (float_count != inst->num_operands - (kVector2Index + 1)) {
+    last_error_msg_ = "OpVectorShuffle: Count mismatched from type.";
+    return SPV_ERROR_INVALID_BINARY;
+  }
+
+  sksl_ << "  " << ResolveType(inst->type_id) << " " << ResolveName(inst->result_id) <<
+      " = " << ResolveType(inst->type_id) << "(";
+
+  std::string vector_name = ResolveName(get_operand(inst, kVector1Index));
+  for (int i = kVector2Index + 1; i < inst->num_operands; i++) {
+    sksl_ << vector_name << "[" << get_operand(inst, i) << "]";
+    if (i < inst->num_operands - 1) {
+      sksl_ << ", ";
+    }
+  }
+  sksl_ << ");\n";
 
   return SPV_SUCCESS;
 }
