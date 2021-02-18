@@ -31,6 +31,8 @@ class FragmentShader : public Shader {
   ~FragmentShader() override;
   static fml::RefPtr<FragmentShader> Create();
 
+	virtual sk_sp<SkShader> shader(SkFilterQuality q) override;
+
   void initWithSource(const std::string& source);
   void initWithSPIRV(const tonic::Uint8List& data, Dart_Handle children);
 
@@ -61,6 +63,7 @@ class FragmentShader : public Shader {
   // Since the sksl cannot be updated, the effect can be
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
+	sk_sp<SkShader> shader_;
 
   std::vector<float> uniforms_;
   std::vector<sk_sp<SkShader>> children_;

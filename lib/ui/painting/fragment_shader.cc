@@ -34,16 +34,22 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
+sk_sp<SkShader> FragmentShader::shader(SkFilterQuality q) {
+	return shader_;
+}
+
 void FragmentShader::initWithSource(const std::string& source) {
   initEffect(SkString(source.c_str()));
   setShader();
 }
 
-void FragmentShader::initWithSPIRV(const tonic::Uint8List& data, Dart_Handle children) {
+void FragmentShader::initWithSPIRV(
+		const tonic::Uint8List& data, Dart_Handle children) {
   std::vector<Shader*> shaders =
       tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
   for (auto& shader : shaders) {
-    children_.push_back(shader->shader());
+    children_.push_back(shader->shader(
+			SkFilterQuality::kHigh_SkFilterQuality));
   }
   auto transpiler = spirv::Transpiler::create();
   auto result = transpiler->Transpile(
@@ -80,13 +86,12 @@ void FragmentShader::setFloatUniform(size_t i, float value) {
 }
 
 void FragmentShader::refresh() {
-  set_shader(UIDartState::CreateGPUObject(
-    runtime_effect_->makeShader(
+	shader_ = runtime_effect_->makeShader(
       uniforms_.size() == 0 ? SkData::MakeEmpty() : SkData::MakeWithCopy(uniforms_.data(), uniforms_.size() * sizeof(float)),
       children_.data(),
       children_.size(),
       nullptr,
-      false)));
+      false);
 }
 
 void FragmentShader::initEffect(SkString sksl) {
@@ -122,7 +127,7 @@ void FragmentShader::setShader() {
     input_child = input_;
   }
 
-  set_shader(UIDartState::CreateGPUObject(builder_->makeShader(nullptr, false)));
+	shader_ = builder_->makeShader(nullptr, false);
 }
 
 void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
