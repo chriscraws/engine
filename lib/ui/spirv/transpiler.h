@@ -37,7 +37,7 @@ class Transpiler {
 
   virtual std::string GetSkSL() = 0;
 
-  // Return the number of float32 values that should be 
+  // Return the number of float32 values that should be
   // included in the uniform value buffer.
   virtual size_t GetUniformBufferSize() = 0;
 

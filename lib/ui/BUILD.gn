@@ -81,8 +81,6 @@ source_set("ui") {
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
     "snapshot_delegate.h",
-    "spirv/transpiler.h",
-    "spirv/transpiler.cc",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
@@ -130,13 +128,12 @@ source_set("ui") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
+    "//flutter/lib/ui/spirv",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/spirv_tools:SPIRV-Tools",
-    "//third_party/spirv_headers:spv_headers",
   ]
 
   if (!defined(defines)) {
@@ -205,7 +202,6 @@ if (enable_unittests) {
       "painting/image_encoding_unittests.cc",
       "painting/path_unittests.cc",
       "painting/vertices_unittests.cc",
-      "spirv/transpiler_unittests.cc",
       "window/platform_configuration_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
     ]

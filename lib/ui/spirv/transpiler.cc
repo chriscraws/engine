@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "lib/ui/spirv/transpiler.h"
+#include "flutter/lib/ui/spirv/transpiler.h"
 
 #include <cstring>
 #include <memory>
@@ -91,7 +91,7 @@ class TranspilerImpl : public Transpiler {
 
   bool inside_block_ = false;
 
-	std::stringstream constants_;
+  std::stringstream constants_;
   std::stringstream sksl_;
 };
 
@@ -542,8 +542,8 @@ spv_result_t TranspilerImpl::HandleConstant(
 
   float value = *reinterpret_cast<const float*>(get_literal(inst, kValueIndex));
 
-  constants_ << "  const float " << ResolveName(inst->result_id) << " = " << value
-        << ";\n";
+  constants_ << "  const float " << ResolveName(inst->result_id) << " = "
+             << value << ";\n";
 
   return SPV_SUCCESS;
 }
@@ -553,8 +553,8 @@ spv_result_t TranspilerImpl::HandleConstantComposite(
   static constexpr int kValueIndex = 2;
   int opcount = inst->num_operands - kValueIndex;
 
-  constants_ << "  const float" << opcount << " " << ResolveName(inst->result_id)
-        << " = float" << opcount << "(";
+  constants_ << "  const float" << opcount << " "
+             << ResolveName(inst->result_id) << " = float" << opcount << "(";
 
   for (int i = 0; i < opcount; i++) {
     constants_ << ResolveName(get_operand(inst, kValueIndex + i));
@@ -594,10 +594,12 @@ spv_result_t TranspilerImpl::HandleVariable(
   return SPV_SUCCESS;
 }
 
-spv_result_t TranspilerImpl::HandleVectorShuffle(const spv_parsed_instruction_t* inst) {
+spv_result_t TranspilerImpl::HandleVectorShuffle(
+    const spv_parsed_instruction_t* inst) {
   size_t float_count = ResolveTypeFloatCount(inst->type_id);
   if (float_count < 1 || float_count > 4) {
-    last_error_msg_ = "OpVectorShuffle: Unsupported number of floats in shuffle";
+    last_error_msg_ =
+        "OpVectorShuffle: Unsupported number of floats in shuffle";
     return SPV_UNSUPPORTED;
   }
 
@@ -614,8 +616,9 @@ spv_result_t TranspilerImpl::HandleVectorShuffle(const spv_parsed_instruction_t*
     return SPV_ERROR_INVALID_BINARY;
   }
 
-  sksl_ << "  " << ResolveType(inst->type_id) << " " << ResolveName(inst->result_id) <<
-      " = " << ResolveType(inst->type_id) << "(";
+  sksl_ << "  " << ResolveType(inst->type_id) << " "
+        << ResolveName(inst->result_id) << " = " << ResolveType(inst->type_id)
+        << "(";
 
   std::string vector_name = ResolveName(get_operand(inst, kVector1Index));
   for (int i = kVector2Index + 1; i < inst->num_operands; i++) {
@@ -716,7 +719,7 @@ spv_result_t TranspilerImpl::HandleLabel(const spv_parsed_instruction_t* inst) {
   }
   inside_block_ = true;
   sksl_ << ") {\n";
-	sksl_ << constants_.str();
+  sksl_ << constants_.str();
   return SPV_SUCCESS;
 }
 
@@ -969,4 +972,3 @@ std::string TranspilerImpl::ResolveGLSLName(uint32_t id) {
 
 }  // namespace spirv
 }  // namespace flutter
-

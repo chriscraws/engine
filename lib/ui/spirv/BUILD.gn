@@ -1,0 +1,36 @@
+# Copyright 2021 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+import("//flutter/testing/testing.gni")
+
+source_set("spirv") {
+
+  sources = [
+    "transpiler.h",
+    "transpiler.cc",
+  ]
+
+  deps = [
+    "//third_party/spirv_tools:SPIRV-Tools",
+    "//third_party/spirv_headers:spv_headers",
+  ]
+}
+
+if (enable_unittests) {
+  executable("spirv_unittests") {
+    testonly = true
+
+    public_configs = [ "//flutter:export_dynamic_symbols" ]
+
+    sources = [
+      "transpiler_unittests.cc",
+    ]
+
+    deps = [
+      ":spirv",
+      "//third_party/googletest:gmock",
+      "//third_party/googletest:gtest",
+      "//third_party/googletest:gtest_main",
+    ]
+  }
+}

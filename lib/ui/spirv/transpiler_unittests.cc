@@ -1,13 +1,13 @@
 #include "flutter/lib/ui/spirv/transpiler.h"
 
-#include "flutter/testing/testing.h"
+#include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
-TEST(TranspilerTest, TestRuns) {
-	// nothing here yet :)
-	EXPECT_TRUE(true);
+TEST(TranspilerTest, ConstructsTranspiler) {
+  auto transpiler = spirv::Transpiler::create();
+  EXPECT_TRUE(transpiler);
 }
 
 }  // namespace testing
