@@ -1,0 +1,22 @@
+uniform float3 i22;
+
+half4 main(float2 i27) {
+  const float i7 = 1;
+  const float3 i8 = float3(i7, i7, i7);
+  const float i9 = 2;
+  const float i11 = 0.25;
+  const float i12 = 0.75;
+  const float3 i13 = float3(i7, i11, i12);
+  const float i18 = 1.5;
+  const float3 i19 = float3(i18, i18, i18);
+  float3 i10 = i8*i9;
+  float3 i14 = -i6;
+  float3 i15 = i13*i14;
+  float3 i16 = i15/i13;
+  float3 i17 = i10+i16;
+  float3 i20 = mod(i17, i19);
+  float3 i23 = i22;
+  float3 i24 = i20*i23;
+  float4 i25 = float4(i24, i7);
+  return half4(i25);
+}

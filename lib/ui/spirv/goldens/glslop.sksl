@@ -1,0 +1,37 @@
+
+half4 main(float2 i41) {
+  const float i7 = 0.5;
+  const float3 i8 = float3(i7, i7, i7);
+  const float i9 = 2;
+  const float3 i10 = float3(i9, i9, i9);
+  const float i11 = 1;
+  const float3 i12 = float3(i11, i11, i11);
+  float3 i13 = abs(i12);
+  float3 i14 = acos(i13);
+  float3 i15 = asin(i14);
+  float3 i16 = atan(i15);
+  float3 i17 = ceil(i16);
+  float3 i18 = clamp(i17, i8, i10);
+  float3 i19 = cos(i18);
+  float3 i20 = degrees(i19);
+  float3 i21 = exp(i20);
+  float3 i22 = exp2(i21);
+  float3 i23 = faceforward(i22, i8, i10);
+  float3 i24 = floor(i23);
+  float3 i25 = fract(i24);
+  float3 i26 = inversesqrt(i25);
+  float3 i27 = log(i26);
+  float3 i28 = log2(i27);
+  float3 i29 = mix(i8, i10, i28);
+  float3 i30 = radians(i29);
+  float3 i31 = reflect(i30, i8);
+  float3 i32 = sign(i31);
+  float3 i33 = sin(i32);
+  float3 i34 = smoothstep(i8, i10, i33);
+  float3 i35 = sqrt(i34);
+  float3 i36 = step(i8, i35);
+  float3 i37 = tan(i36);
+  float3 i38 = trunc(i37);
+  float4 i39 = float4(i38, i11);
+  return half4(i39);
+}

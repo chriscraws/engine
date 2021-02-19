@@ -1,0 +1,9 @@
+
+half4 main(float2 i12) {
+  const float i6 = 0;
+  const float i7 = 0.25;
+  const float i8 = 0.75;
+  const float i9 = 1;
+  const float4 i10 = float4(i6, i7, i8, i9);
+  return half4(i10);
+}
