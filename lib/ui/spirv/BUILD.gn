@@ -27,21 +27,28 @@ if (enable_unittests) {
     ]
   }
 
-  action_foreach("spirv_goldens") {
+  golden_sources = [
+    "goldens/glslop.spv",
+    "goldens/scalar.spv",
+    "goldens/simple.spv",
+    "goldens/vec2op.spv",
+    "goldens/vec3op.spv",
+    "goldens/vec4op.spv",
+  ]
+
+  copy("spirv_golden_sources") {
+    sources = golden_sources
+    outputs = [ "$target_out_dir/{{source_file_part}}" ]
+  }
+
+  action_foreach("spirv_transpile_goldens") {
     script = "regenerate.py"
 
     deps = [
       ":spirv_regenerate_goldens",
     ]
 
-    sources = [
-      "goldens/glslop.spv",
-      "goldens/scalar.spv",
-      "goldens/simple.spv",
-      "goldens/vec2op.spv",
-      "goldens/vec3op.spv",
-      "goldens/vec4op.spv",
-    ]
+    sources = golden_sources
 
     outputs = [
       "$target_gen_dir/{{source_name_part}}.sksl",
@@ -64,9 +71,11 @@ if (enable_unittests) {
       "transpiler_unittests.cc",
     ]
 
+    data_deps = [ ":spirv_golden_sources" ]
+
     deps = [
       ":spirv",
-      ":spirv_goldens",
+      ":spirv_transpile_goldens",
       "//third_party/googletest:gmock",
       "//third_party/googletest:gtest",
       "//third_party/googletest:gtest_main",

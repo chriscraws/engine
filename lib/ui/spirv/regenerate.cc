@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <vector>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 #include "flutter/lib/ui/spirv/transpiler.h"
 
