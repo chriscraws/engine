@@ -100,7 +100,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/chriscraws/buildroot.git' + '@' + 'e25e9c2d3c2496db0c61820aebf8878d19fcddbc',
+  'src': 'https://github.com/chriscraws/buildroot.git' + '@' + '07df531b27149ab457e60fcc38b24d801e5fd8ff',
 
    # Fuchsia compatibility
    #
@@ -377,6 +377,12 @@ deps = {
 
   'src/third_party/gyp':
    Var('chromium_git') + '/external/gyp.git' + '@' + '4801a5331ae62da9769a327f11c4213d32fb0dad',
+
+   'src/third_party/spirv_headers':
+   Var('github_git') + '/KhronosGroup/SPIRV-Headers.git' + '@' + 'f027d53ded7e230e008d37c8b47ede7cd308e19d',
+
+   'src/third_party/spirv_tools':
+   Var('github_git') + '/KhronosGroup/SPIRV-Tools.git' + '@' + '895927bd3f2d653f40cebab55aa6c7eabde30a86',
 
    # Headers for Vulkan 1.1
    'src/third_party/vulkan':
