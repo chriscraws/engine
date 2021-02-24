@@ -96,9 +96,10 @@ void FragmentShader::refresh() {
 
 void FragmentShader::initEffect(SkString sksl) {
   SkString err;
-  std::tie(runtime_effect_, err) = SkRuntimeEffect::Make(sksl);
+  SkRuntimeEffect::Result result = SkRuntimeEffect::Make(sksl);
+  runtime_effect_ = result.effect;
   if (!runtime_effect_) {
-    FML_DLOG(ERROR) << "Invalid SKSL:\n" << sksl.c_str() << "\nSKSL Error:\n" << err.c_str();
+    FML_DLOG(ERROR) << "Invalid SKSL:\n" << sksl.c_str() << "\nSKSL Error:\n" << result.errorText.c_str();
   } else {
     FML_DLOG(ERROR) << "Valid SKSL:\n" << sksl.c_str();
   }

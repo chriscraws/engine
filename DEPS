@@ -379,10 +379,10 @@ deps = {
    Var('chromium_git') + '/external/gyp.git' + '@' + '4801a5331ae62da9769a327f11c4213d32fb0dad',
 
    'src/third_party/spirv_headers':
-   Var('github_git') + '/KhronosGroup/SPIRV-Headers.git' + '@' + 'f027d53ded7e230e008d37c8b47ede7cd308e19d',
+   Var('github_git') + '/KhronosGroup/SPIRV-Headers.git' + '@' + 'a3fdfe81465d57efc97cfd28ac6c8190fb31a6c8',
 
    'src/third_party/spirv_tools':
-   Var('github_git') + '/KhronosGroup/SPIRV-Tools.git' + '@' + '895927bd3f2d653f40cebab55aa6c7eabde30a86',
+   Var('github_git') + '/KhronosGroup/SPIRV-Tools.git' + '@' + 'ef3290bbea35935ba8fd623970511ed9f045bbd7',
 
    # Headers for Vulkan 1.1
    'src/third_party/vulkan':
