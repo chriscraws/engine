@@ -55,11 +55,6 @@ class FragmentShader : public Shader {
   void setShader();
   void initEffect(SkString sksl);
 
-  // Variables that require setShader() to be called when changed.
-  // TODO(clocksmith): Remove these in favor of vector-based uniform setting/updating.
-  float t_;
-  sk_sp<SkShader> input_;
-
   // Since the sksl cannot be updated, the effect can be
   // created once and re-used.
   sk_sp<SkRuntimeEffect> runtime_effect_;
@@ -68,8 +63,6 @@ class FragmentShader : public Shader {
   std::vector<float> uniforms_;
   std::vector<sk_sp<SkShader>> children_;
 
-  // TODO(clocksmith): Remove this after everything uses vector-based uniform setting/updating.
-  std::unique_ptr<SkRuntimeShaderBuilder> builder_;
 };
 
 }  // namespace flutter

@@ -25,10 +25,7 @@ static void FragmentShader_constructor(Dart_NativeArguments args) {
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShader);
 
 #define FOR_EACH_BINDING(V) \
-  V(FragmentShader, initWithSource) \
   V(FragmentShader, initWithSPIRV) \
-  V(FragmentShader, setTime) \
-  V(FragmentShader, setImage) \
   V(FragmentShader, setFloatUniform) \
   V(FragmentShader, refresh)
 
@@ -36,11 +33,6 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 sk_sp<SkShader> FragmentShader::shader(SkFilterQuality q) {
 	return shader_;
-}
-
-void FragmentShader::initWithSource(const std::string& source) {
-  initEffect(SkString(source.c_str()));
-  setShader();
 }
 
 void FragmentShader::initWithSPIRV(
@@ -59,23 +51,12 @@ void FragmentShader::initWithSPIRV(
     FML_DLOG(ERROR) << "Invalid SPIR-V: " << result.message;
     return;
   }
+
+
   auto sksl = transpiler->GetSkSL();
   uniforms_.resize(transpiler->GetUniformBufferSize());
-  initWithSource(sksl);
-}
-
-void FragmentShader::setTime(float time) {
-  t_ = time;
-  setShader();
-}
-
-void FragmentShader::setImage(CanvasImage* image,
-                              SkTileMode tmx,
-                              SkTileMode tmy,
-                              const tonic::Float64List& matrix4) {
-  SkMatrix sk_matrix = ToSkMatrix(matrix4);
-  input_ = image->image()->makeShader(tmx, tmy, &sk_matrix);
-  setShader();
+  initEffect(SkString(sksl.c_str()));
+  refresh();
 }
 
 void FragmentShader::setFloatUniform(size_t i, float value) {
@@ -103,32 +84,6 @@ void FragmentShader::initEffect(SkString sksl) {
   } else {
     FML_DLOG(ERROR) << "Valid SKSL:\n" << sksl.c_str();
   }
-}
-
-// Creates a builder and sets time uniform and image child if
-// they are valid and are defined in the SKSL program.
-//
-// After any uniforms/children are set on the builser, the shader is 
-// created and set.
-void FragmentShader::setShader() {
-  // This can be re-used after
-  // https://github.com/google/skia/commit/b6bd0d2094b6d81cd22eba60ea91e311fe536d27
-  // TODO(clocksmith): Only create one builder for the life of the FragmentShader.
-  builder_ = std::make_unique<SkRuntimeShaderBuilder>(runtime_effect_);
-
-  // Only update the time if the uniform is declared in the program.
-  SkRuntimeShaderBuilder::BuilderUniform t_uniform = builder_->uniform("t");
-  if (t_uniform.fVar != nullptr) {
-    t_uniform = t_;
-  }
-
-  // Only update the input if the child is declared in the program.
-  SkRuntimeShaderBuilder::BuilderChild input_child = builder_->child("input");
-  if (input_child.fIndex != -1 && input_ != nullptr) {
-    input_child = input_;
-  }
-
-	shader_ = builder_->makeShader(nullptr, false);
 }
 
 void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
