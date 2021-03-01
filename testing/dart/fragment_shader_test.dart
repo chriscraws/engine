@@ -5,23 +5,26 @@
 // @dart = 2.6
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
 void main() {
-  // empty, adapt from canvas_test.dart
+  test('throws exception for invalid shader', () {
+    final invalidBytes = Uint8List.fromList([1, 2, 3, 4, 5]);
+    expect(() => FragmentShader(invalidBytes, []), throws);
+  });
+
   test('renders simple shader', () async {
     final shaderBytes = await (File(path.join(
-          'flutter',
-          'testing',
-          'resources',
-          'fragment_shader_simple.spv',
-        ))).readAsBytes(); 
+      'flutter',
+      'testing',
+      'resources',
+      'fragment_shader_simple.spv',
+    ))).readAsBytes();
     final shader = FragmentShader(shaderBytes, []);
-
-    // TODO(chriscraws): expose compilation errors
 
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
@@ -33,7 +36,7 @@ void main() {
 
     final toFloat = (int v) => v.toDouble() / 255.0;
     final epsilon = 0.5 / 255.0;
-    
+
     expect(toFloat(renderedBytes.getUint8(0)), closeTo(0.0, epsilon));
     expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
     expect(toFloat(renderedBytes.getUint8(2)), closeTo(0.75, epsilon));
