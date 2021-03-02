@@ -30,10 +30,12 @@ class TranspilerImpl : public Transpiler {
   void set_last_msg(std::string msg);
 
   spv_result_t HandleCapability(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleEntryPoint(const spv_parsed_instruction_t* inst);
   spv_result_t HandleExtInstImport(const spv_parsed_instruction_t* inst);
   spv_result_t HandleMemoryModel(const spv_parsed_instruction_t* inst);
   spv_result_t HandleDecorate(const spv_parsed_instruction_t* inst);
   spv_result_t HandleTypeFloat(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleTypeVoid(const spv_parsed_instruction_t* inst);
   spv_result_t HandleTypeVector(const spv_parsed_instruction_t* inst);
   spv_result_t HandleTypePointer(const spv_parsed_instruction_t* inst);
   spv_result_t HandleTypeFunction(const spv_parsed_instruction_t* inst);
@@ -49,6 +51,7 @@ class TranspilerImpl : public Transpiler {
   spv_result_t HandleCompositeConstruct(const spv_parsed_instruction_t* inst);
   spv_result_t HandleCompositeExtract(const spv_parsed_instruction_t* inst);
   spv_result_t HandleLoad(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleStore(const spv_parsed_instruction_t* inst);
   spv_result_t HandleFNegate(const spv_parsed_instruction_t* inst);
   spv_result_t HandleOperator(const spv_parsed_instruction_t* inst, char op);
   spv_result_t HandleBuiltin(const spv_parsed_instruction_t* inst,
@@ -62,6 +65,12 @@ class TranspilerImpl : public Transpiler {
   size_t ResolveTypeFloatCount(uint32_t id);
   std::string ResolveGLSLName(uint32_t id);
 
+  spv_result_t HandleTypeFunctionSampler(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleTypeFunctionMain(const spv_parsed_instruction_t* inst);
+
+  spv_result_t HandleDecorateLinkage(const spv_parsed_instruction_t* inst);
+  spv_result_t HandleDecorateLocation(const spv_parsed_instruction_t* inst);
+
   const spv_context spv_context_;
   spv_diagnostic spv_diagnostic_;
 
@@ -71,7 +80,13 @@ class TranspilerImpl : public Transpiler {
   std::string last_error_msg_ = "";
 
   // Result-IDs of important instructions.
+  uint32_t entry_point_ = 0;
+  uint32_t color_output_ = 0;
+  uint32_t frag_coord_ = 0;
+  uint32_t frag_coord_ptr_type_ = 0;
   uint32_t main_function_type_ = 0;
+  uint32_t color_ptr_type_ = 0;
+  uint32_t void_type_ = 0;
   uint32_t float_type_ = 0;
   uint32_t vec2_type_ = 0;
   uint32_t vec3_type_ = 0;
@@ -80,6 +95,7 @@ class TranspilerImpl : public Transpiler {
   uint32_t vec2_uniform_type_ = 0;
   uint32_t vec3_uniform_type_ = 0;
   uint32_t vec4_uniform_type_ = 0;
+  uint32_t location_0_ = 0;
   uint32_t main_function_ = 0;
   uint32_t frag_position_param_ = 0;
   uint32_t return_ = 0;
@@ -96,6 +112,10 @@ class TranspilerImpl : public Transpiler {
 };
 
 namespace {
+
+const char kColorGlobalName[] = "oColor";
+const char kFragCoordParamName[] = "iFragCoordParam";
+const char kFragCoordGlobalName[] = "iFragCoord";
 
 uint32_t get_operand(const spv_parsed_instruction_t* parsed_instruction,
                      int operand_index) {
@@ -127,8 +147,18 @@ spv_result_t parse_instruction(
   spv_result_t result = SPV_UNSUPPORTED;
 
   switch (parsed_instruction->opcode) {
+    // ignored Operators
+    case spv::OpExecutionMode:
+    case spv::OpName:
+    case spv::OpReturn:
+    case spv::OpSource:
+      result = SPV_SUCCESS;
+      break;
     case spv::OpCapability:
       result = interpreter->HandleCapability(parsed_instruction);
+      break;
+    case spv::OpEntryPoint:
+      result = interpreter->HandleEntryPoint(parsed_instruction);
       break;
     case spv::OpExtInstImport:
       result = interpreter->HandleExtInstImport(parsed_instruction);
@@ -138,6 +168,9 @@ spv_result_t parse_instruction(
       break;
     case spv::OpDecorate:
       result = interpreter->HandleDecorate(parsed_instruction);
+      break;
+    case spv::OpTypeVoid:
+      result = interpreter->HandleTypeVoid(parsed_instruction);
       break;
     case spv::OpTypeFloat:
       result = interpreter->HandleTypeFloat(parsed_instruction);
@@ -183,6 +216,9 @@ spv_result_t parse_instruction(
       break;
     case spv::OpCompositeExtract:
       result = interpreter->HandleCompositeExtract(parsed_instruction);
+      break;
+    case spv::OpStore:
+      result = interpreter->HandleStore(parsed_instruction);
       break;
     case spv::OpLoad:
       result = interpreter->HandleLoad(parsed_instruction);
@@ -337,6 +373,35 @@ spv_result_t TranspilerImpl::HandleCapability(
   }
 }
 
+spv_result_t TranspilerImpl::HandleEntryPoint(
+    const spv_parsed_instruction_t* inst) {
+  if (entry_point_ != 0) {
+    last_error_msg_ = "Duplicate OpEntryPoint instructions.";
+    return SPV_UNSUPPORTED;
+  }
+
+  static constexpr char kEntryPointName[] = "main";
+  static constexpr int kExecutionModelIndex = 0;
+  static constexpr int kEntryPointIndex = 1;
+  static constexpr int kNameIndex = 2;
+
+  const char* name = get_literal(inst, kNameIndex);
+  if (strcmp(kEntryPointName, name) != 0) {
+    last_error_msg_ =
+        "OpEntryPoint name must be 'main', got '" + std::string(name) + "'.";
+    return SPV_UNSUPPORTED;
+  }
+
+  if (get_operand(inst, kExecutionModelIndex) != spv::ExecutionModelFragment) {
+    last_error_msg_ = "OpEntryPoint: only supports Fragment execution model.";
+    return SPV_UNSUPPORTED;
+  }
+
+  entry_point_ = get_operand(inst, kEntryPointIndex);
+  main_function_ = entry_point_;
+  return SPV_SUCCESS;
+}
+
 spv_result_t TranspilerImpl::HandleExtInstImport(
     const spv_parsed_instruction_t* inst) {
   static constexpr int kNameIndex = 0;
@@ -376,16 +441,44 @@ spv_result_t TranspilerImpl::HandleMemoryModel(
 
 spv_result_t TranspilerImpl::HandleDecorate(
     const spv_parsed_instruction_t* inst) {
-  static constexpr int kTargetIndex = 0;
   static constexpr int kDecorationIndex = 1;
+
+  switch (get_operand(inst, kDecorationIndex)) {
+    case spv::DecorationLinkageAttributes:
+      return HandleDecorateLinkage(inst);
+    case spv::DecorationLocation:
+      return HandleDecorateLocation(inst);
+    default:
+      // Ignore unsupported decorations.
+      return SPV_SUCCESS;
+  }
+}
+spv_result_t TranspilerImpl::HandleDecorateLocation(
+    const spv_parsed_instruction_t* inst) {
+  static constexpr int kTargetIndex = 0;
+  static constexpr int kLocationIndex = 2;
+
+  if (get_operand(inst, kLocationIndex) != 0) {
+    last_error_msg_ = "OpDecorate: only location 0 is supported";
+    return SPV_UNSUPPORTED;
+  }
+
+  if (location_0_ > 0) {
+    last_error_msg_ = "OpDecorate: duplicate decoration at location";
+    return SPV_ERROR_INVALID_VALUE;
+  }
+
+  location_0_ = get_operand(inst, kTargetIndex);
+
+  return SPV_SUCCESS;
+}
+
+spv_result_t TranspilerImpl::HandleDecorateLinkage(
+    const spv_parsed_instruction_t* inst) {
+  static constexpr int kTargetIndex = 0;
   static constexpr int kLinkageName = 2;
   static constexpr int kLinkageType = 3;
   static constexpr char kMainExportName[] = "main";
-
-  if (get_operand(inst, kDecorationIndex) != spv::DecorationLinkageAttributes) {
-    last_error_msg_ = "OpDecorate: Only LinkageAttributes are supported.";
-    return SPV_UNSUPPORTED;
-  }
 
   auto linkage_type =
       static_cast<spv::LinkageType>(get_operand(inst, kLinkageType));
@@ -412,6 +505,12 @@ spv_result_t TranspilerImpl::HandleDecorate(
 
   sksl_ << "in shader " << name << ";\n";
 
+  return SPV_SUCCESS;
+}
+
+spv_result_t TranspilerImpl::HandleTypeVoid(
+    const spv_parsed_instruction_t* inst) {
+  void_type_ = inst->result_id;
   return SPV_SUCCESS;
 }
 
@@ -476,10 +575,22 @@ spv_result_t TranspilerImpl::HandleTypePointer(
   uint32_t type = get_operand(inst, kTypeIndex);
   uint32_t storage_class = get_operand(inst, kStorageClassIndex);
 
-  if (storage_class != spv::StorageClassUniformConstant) {
-    last_error_msg_ =
-        "OpTypePointer: Only storage class 'UniformConstant' is supported.";
-    return SPV_UNSUPPORTED;
+  switch (storage_class) {
+    case spv::StorageClassInput:
+      if (entry_point_ && !frag_coord_ptr_type_) {
+        frag_coord_ptr_type_ = inst->result_id;
+        break;
+      }
+    case spv::StorageClassUniformConstant:
+      break;
+    case spv::StorageClassOutput:
+      if (entry_point_ && !color_ptr_type_) {
+        color_ptr_type_ = inst->result_id;
+        break;
+      }
+    default:
+      last_error_msg_ = "OpTypePointer: unsupported storage class.";
+      return SPV_UNSUPPORTED;
   }
 
   if (type == float_type_) {
@@ -506,6 +617,35 @@ spv_result_t TranspilerImpl::HandleTypeFunction(
     return SPV_UNSUPPORTED;
   }
 
+  if (entry_point_) {
+    return HandleTypeFunctionMain(inst);
+  } else {
+    return HandleTypeFunctionSampler(inst);
+  }
+}
+
+spv_result_t TranspilerImpl::HandleTypeFunctionMain(
+    const spv_parsed_instruction_t* inst) {
+  if (inst->num_operands > 2) {
+    last_error_msg_ =
+        "OpTypeFunction: Parameters not allowed on main function.";
+    return SPV_UNSUPPORTED;
+  }
+
+  static constexpr int kReturnTypeIndex = 1;
+  uint32_t return_type = get_operand(inst, kReturnTypeIndex);
+  if (return_type == 0 || return_type != void_type_) {
+    last_error_msg_ =
+        "OpTypeFunction: Return type was not defined or was not void.";
+    return SPV_UNSUPPORTED;
+  }
+
+  main_function_type_ = inst->result_id;
+  return SPV_SUCCESS;
+}
+
+spv_result_t TranspilerImpl::HandleTypeFunctionSampler(
+    const spv_parsed_instruction_t* inst) {
   if (inst->num_operands > 3) {
     last_error_msg_ = "OpTypeFunction: Only one parameter is supported.";
     return SPV_UNSUPPORTED;
@@ -571,14 +711,11 @@ spv_result_t TranspilerImpl::HandleConstantComposite(
 spv_result_t TranspilerImpl::HandleVariable(
     const spv_parsed_instruction_t* inst) {
   static constexpr int kStorageClassIndex = 2;
+  uint32_t storage_class = get_operand(inst, kStorageClassIndex);
 
-  if (get_operand(inst, kStorageClassIndex) !=
-      spv::StorageClassUniformConstant) {
-    last_error_msg_ = "OpVariable: Must use storage class 'UniformConstant'";
-    return SPV_UNSUPPORTED;
-  }
-
-  if (inst->type_id == 0 || (inst->type_id != float_uniform_type_ &&
+  if (inst->type_id == 0 || (inst->type_id != frag_coord_ptr_type_ &&
+                             inst->type_id != color_ptr_type_ &&
+                             inst->type_id != float_uniform_type_ &&
                              inst->type_id != vec2_uniform_type_ &&
                              inst->type_id != vec3_uniform_type_ &&
                              inst->type_id != vec4_uniform_type_)) {
@@ -586,12 +723,22 @@ spv_result_t TranspilerImpl::HandleVariable(
     return SPV_UNSUPPORTED;
   }
 
-  uniform_buffer_size_ += ResolveTypeFloatCount(inst->type_id);
-
-  sksl_ << "uniform " << ResolveType(inst->type_id) << " "
-        << ResolveName(inst->result_id) << ";\n";
-
-  return SPV_SUCCESS;
+  switch (storage_class) {
+    case spv::StorageClassInput:
+      frag_coord_ = inst->result_id;
+      return SPV_SUCCESS;
+    case spv::StorageClassOutput:
+      color_output_ = inst->result_id;
+      return SPV_SUCCESS;
+    case spv::StorageClassUniformConstant:
+      uniform_buffer_size_ += ResolveTypeFloatCount(inst->type_id);
+      sksl_ << "uniform " << ResolveType(inst->type_id) << " "
+            << ResolveName(inst->result_id) << ";\n";
+      return SPV_SUCCESS;
+    default:
+      last_error_msg_ = "OpVariable: unsupported storage class.";
+      return SPV_UNSUPPORTED;
+  }
 }
 
 spv_result_t TranspilerImpl::HandleVectorShuffle(
@@ -637,11 +784,9 @@ spv_result_t TranspilerImpl::HandleFunction(
   static constexpr int kFunctionControlIndex = 2;
   static constexpr int kFunctionTypeIndex = 3;
 
-  if (inst->result_id == 0 ||
-      (inst->result_id != main_function_ &&
-       imported_functions_.count(inst->result_id) == 0)) {
-    last_error_msg_ =
-        "OpFunction: Must be exported 'main' or imported function.";
+  uint32_t function_type = get_operand(inst, kFunctionTypeIndex);
+  if (function_type == 0 || function_type != main_function_type_) {
+    last_error_msg_ = "OpFunction: Function type mismatch.";
     return SPV_UNSUPPORTED;
   }
 
@@ -651,19 +796,22 @@ spv_result_t TranspilerImpl::HandleFunction(
     return SPV_UNSUPPORTED;
   }
 
-  uint32_t function_type = get_operand(inst, kFunctionTypeIndex);
-  if (function_type == 0 || function_type != main_function_type_) {
-    last_error_msg_ = "OpFunction: Function type mismatch.";
+  if (inst->result_id == 0 ||
+      (inst->result_id != entry_point_ && inst->result_id != main_function_ &&
+       imported_functions_.count(inst->result_id) == 0)) {
+    last_error_msg_ =
+        "OpFunction: Must be exported 'main' or imported function.";
     return SPV_UNSUPPORTED;
   }
 
-  if (inst->type_id != vec4_type_) {
+  if (!entry_point_ && inst->type_id != vec4_type_) {
     last_error_msg_ = "OpFunction: Function must return vec4 type.";
     return SPV_UNSUPPORTED;
   }
+  sksl_ << "\nhalf4 main(";
 
-  if (inst->result_id == main_function_) {
-    sksl_ << "\nhalf4 main(";
+  if (inst->result_id == entry_point_) {
+    sksl_ << "float2 " << kFragCoordParamName;
   }
 
   return SPV_SUCCESS;
@@ -712,13 +860,13 @@ spv_result_t TranspilerImpl::HandleFunctionCall(
 }
 
 spv_result_t TranspilerImpl::HandleLabel(const spv_parsed_instruction_t* inst) {
-  if (last_op_ != spv::OpFunctionParameter) {
-    last_error_msg_ =
-        "OpLabel: The last instruction should have been OpFunctionParameter.";
-    return SPV_UNSUPPORTED;
-  }
   inside_block_ = true;
   sksl_ << ") {\n";
+  if (entry_point_) {
+    sksl_ << "  float4 " << kFragCoordGlobalName << " = float4("
+          << kFragCoordParamName << ",0,0);\n";
+    sksl_ << "  float4 " << kColorGlobalName << ";\n";
+  }
   sksl_ << constants_.str();
   return SPV_SUCCESS;
 }
@@ -731,7 +879,9 @@ spv_result_t TranspilerImpl::HandleReturnValue(
     return SPV_UNSUPPORTED;
   }
   return_ = get_operand(inst, kReturnIdIndex);
+
   sksl_ << "  return half4(" << ResolveName(return_) << ");\n";
+
   return SPV_SUCCESS;
 }
 
@@ -742,8 +892,16 @@ spv_result_t TranspilerImpl::HandleLoad(const spv_parsed_instruction_t* inst) {
     return SPV_ERROR_INVALID_BINARY;
   }
   static constexpr int kPointerIndex = 2;
+
+  uint32_t src = get_operand(inst, kPointerIndex);
+  std::string src_name;
+  if (src == frag_coord_) {
+    src_name = kFragCoordGlobalName;
+  } else {
+    src_name = ResolveName(src);
+  }
   sksl_ << "  " << type << " " << ResolveName(inst->result_id) << " = "
-        << ResolveName(get_operand(inst, kPointerIndex)) << ";\n";
+        << src_name << ";\n";
   return SPV_SUCCESS;
 }
 
@@ -886,9 +1044,27 @@ spv_result_t TranspilerImpl::HandleCompositeExtract(
   return SPV_SUCCESS;
 }
 
+spv_result_t TranspilerImpl::HandleStore(const spv_parsed_instruction_t* inst) {
+  static constexpr int kTargetIndex = 0;
+  static constexpr int kSrcIndex = 1;
+  uint32_t target = get_operand(inst, kTargetIndex);
+  uint32_t src = get_operand(inst, kSrcIndex);
+
+  if (target != color_output_) {
+    last_error_msg_ = "OpStore: Only output variable is assignable.";
+    return SPV_UNSUPPORTED;
+  }
+
+  sksl_ << "  " << kColorGlobalName << " = " << ResolveName(src) << ";\n";
+  return SPV_SUCCESS;
+}
+
 spv_result_t TranspilerImpl::HandleFunctionEnd(
     const spv_parsed_instruction_t* inst) {
   if (inside_block_) {
+    if (entry_point_) {
+      sksl_ << "  return " << kColorGlobalName << ";\n";
+    }
     sksl_ << "}\n";
     inside_block_ = false;
   }

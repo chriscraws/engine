@@ -1,0 +1,14 @@
+
+half4 main(float2 iFragCoordParam) {
+  float4 iFragCoord = float4(iFragCoordParam,0,0);
+  float4 oColor;
+  const float i15 = 0;
+  const float i16 = 1;
+  float4 i13 = iFragCoord;
+  float2 i14 = float2(i13[0], i13[1]);
+  float i17 = i14[0];
+  float i18 = i14[1];
+  float4 i19 = float4(i17, i18, i15, i16);
+  oColor = i19;
+  return oColor;
+}

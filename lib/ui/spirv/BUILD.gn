@@ -28,6 +28,7 @@ if (enable_unittests) {
   }
 
   golden_sources = [
+    "goldens/glsl.spv",
     "goldens/glslop.spv",
     "goldens/scalar.spv",
     "goldens/simple.spv",

@@ -37,7 +37,7 @@ int main(int argc, const char* argv[]) {
   auto result = transpiler->Transpile(buf.data(), size);
   if (result.status != flutter::spirv::Status::kSuccess) {
     std::cerr << result.message << std::endl;
-    return -1;
+    std::abort();
   }
 
   std::fstream output;
@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
   if (!output.is_open()) {
     output.close();
     std::cerr << "failed to open output file" << std::endl;
-    return -1;
+    std::abort();
   }
 
   std::string sksl = transpiler->GetSkSL();
