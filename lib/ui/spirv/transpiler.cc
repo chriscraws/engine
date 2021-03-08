@@ -148,12 +148,12 @@ spv_result_t parse_instruction(
 
   switch (parsed_instruction->opcode) {
     // ignored Operators
-    case spv::OpSourceExtension:
-    case spv::OpMemberName:
     case spv::OpExecutionMode:
+    case spv::OpMemberName:
     case spv::OpName:
     case spv::OpReturn:
     case spv::OpSource:
+    case spv::OpSourceExtension:
       result = SPV_SUCCESS;
       break;
     case spv::OpCapability:
@@ -458,17 +458,6 @@ spv_result_t TranspilerImpl::HandleDecorate(
 spv_result_t TranspilerImpl::HandleDecorateLocation(
     const spv_parsed_instruction_t* inst) {
   static constexpr int kTargetIndex = 0;
-  // static constexpr int kLocationIndex = 2;
-
-  // if (get_operand(inst, kLocationIndex) != 0) {
-  //   last_error_msg_ = "OpDecorate: only location 0 is supported";
-  //   return SPV_UNSUPPORTED;
-  // }
-
-  // if (location_0_ > 0) {
-  //   last_error_msg_ = "OpDecorate: duplicate decoration at location";
-  //   return SPV_ERROR_INVALID_VALUE;
-  // }
 
   location_0_ = get_operand(inst, kTargetIndex);
 
@@ -583,8 +572,8 @@ spv_result_t TranspilerImpl::HandleTypePointer(
         frag_coord_ptr_type_ = inst->result_id;
         break;
       }
-    case spv::StorageClassUniformConstant:
     case spv::StorageClassUniform:
+    case spv::StorageClassUniformConstant:
       break;
     case spv::StorageClassOutput:
       if (entry_point_ && !color_ptr_type_) {
@@ -592,7 +581,7 @@ spv_result_t TranspilerImpl::HandleTypePointer(
         break;
       }
     default:
-      last_error_msg_ = "OpTypePointer: unsupported storage class. " + std::to_string(storage_class);
+      last_error_msg_ = "OpTypePointer: unsupported storage class: " + std::to_string(storage_class) + ".";
       return SPV_UNSUPPORTED;
   }
 
